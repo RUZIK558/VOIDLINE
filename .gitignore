@@ -2,3 +2,6 @@ node_modules/
 dist/
 *.log
 .DS_Store
+
+# Generated during packaging
+build/windows-files.nsh
