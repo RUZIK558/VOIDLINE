@@ -1,0 +1,2 @@
+SKELETON 3600 frames: no accumulated tilt, returns neutral {"spine":-0.13999999999999999,"reset":0,"clips":{"butterfly":["inspect","equip","fire","heavy"],"karambit":["inspect","equip","fire","heavy"],"m9":["inspect","equip","fire","heavy"]}}
+15 knife frames rendered. No page errors.

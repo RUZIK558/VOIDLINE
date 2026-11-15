@@ -1,0 +1,21 @@
+✔ ERR_FAILED -2 on first navigation is retried and recovers (1.505362ms)
+✔ superseded ERR_ABORTED only succeeds if the real UI is ready (0.454527ms)
+✔ persistent navigation failure is bounded and retains the cause (1.032921ms)
+✔ closed window stops startup retries (3.20848ms)
+✔ ready probe requires 200 plus the game document and rejects external URLs (19.602778ms)
+✔ 200 error/blank document is not a successful startup (2.956104ms)
+✔ a failed Node readiness probe cannot suppress successful Chromium navigation (7.589672ms)
+✔ a never-settling readiness probe does not hold back the interface (0.535086ms)
+✔ private-origin restriction is enforced even when probe is advisory (1.114251ms)
+✔ stuck real navigation is bounded and stopped, with cause retained (41.614151ms)
+✔ slow-chunk HTTP probe uses a total deadline rather than only socket inactivity (49.743426ms)
+✔ diagnostics fall back from an unwritable profile and preserve the startup error (1.101519ms)
+✔ if all automatic log writes fail, an in-memory report can still be exported (0.535071ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5206.043649

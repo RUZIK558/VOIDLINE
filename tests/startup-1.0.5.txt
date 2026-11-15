@@ -1,0 +1,14 @@
+✔ ERR_FAILED -2 on first navigation is retried and recovers (1.066343ms)
+✔ superseded ERR_ABORTED only succeeds if the real UI is ready (0.267234ms)
+✔ persistent navigation failure is bounded and retains the cause (0.963497ms)
+✔ closed window stops startup retries (0.783266ms)
+✔ ready probe requires 200 plus the game document and rejects external URLs (23.26388ms)
+✔ 200 error/blank document is not a successful startup (4.180207ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 106.829046

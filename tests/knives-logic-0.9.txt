@@ -1,0 +1,15 @@
+✔ all three knives always owned, cannot be bought, dropped or reloaded (3.663648ms)
+✔ melee is server-authoritative, front slash 40, heavy 65, fire cadence enforced, no bullet event (1.067055ms)
+✔ melee cannot hit outside range or through solid geometry (0.637721ms)
+✔ right-click knife input triggers heavy strike, backstab lethal, teammates immune (1.388096ms)
+✔ death does not drop knives, knives restored on next round (0.414336ms)
+✔ 0.8 ten-gun profile migrates without losing per-gun paint; knives default factory (0.215734ms)
+✔ scope sensitivity persists, clamps and defaults independently; knife key/model validate (0.426323ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 84.217635

@@ -1,0 +1,4 @@
+AppImage embedded ASAR matches tested Linux package
+Windows extracted ASAR VCAC: clean, 146 files; static check, not Windows execution
+NSIS installer embedded ASAR matches tested Windows package
+Windows portable embedded ASAR matches tested Windows package; 7zz archive tests pass

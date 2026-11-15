@@ -1,0 +1,602 @@
+--- a/build/native/linux-launcher.sh
++++ b/build/native/linux-launcher.sh
+@@ -0,0 +1,12 @@
++#!/bin/sh
++# Select Ozone BEFORE Electron starts. JS main-process flags can be too late.
++HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
++explicit=0
++for arg in "$@"; do case "$arg" in --ozone-platform|--ozone-platform=*) explicit=1;; esac; done
++if [ "$explicit" = 1 ]; then exec "$HERE/voidline-arena.bin" "$@"; fi
++case "${VOIDLINE_OZONE_PLATFORM:-}" in
++ x11|wayland) backend=$VOIDLINE_OZONE_PLATFORM;;
++ *) if [ -n "${DISPLAY:-}" ]; then backend=x11; elif [ -n "${WAYLAND_DISPLAY:-}" ]; then backend=wayland; else backend=; fi;;
++esac
++if [ -n "$backend" ]; then exec "$HERE/voidline-arena.bin" "--ozone-platform=$backend" "$@"; fi
++exec "$HERE/voidline-arena.bin" "$@"
+--- a/electron.cjs
++++ b/electron.cjs
+@@ -1,15 +1,16 @@
+ const { app, BrowserWindow, ipcMain, dialog, Menu } = require("electron");
+ const path = require("node:path");
+-// Native Wayland through Chromium Ozone; leave X11 auto-selection intact.
+-if (!app.commandLine.hasSwitch("ozone-platform") && process.platform === "linux" && (process.env.XDG_SESSION_TYPE === "wayland" || process.env.WAYLAND_DISPLAY)) {
+-  app.commandLine.appendSwitch("ozone-platform", "wayland");
+-  app.commandLine.appendSwitch("enable-features", "WaylandWindowDecorations");
++// Prefer XWayland on Linux when available: compositor-confined Wayland pointer
++// motion must not be mistaken for an infinite relative stream.
++if(process.platform==='linux'&&!app.commandLine.hasSwitch('ozone-platform')){
++ const chosen=['x11','wayland'].includes(process.env.VOIDLINE_OZONE_PLATFORM)?process.env.VOIDLINE_OZONE_PLATFORM:process.env.DISPLAY?'x11':process.env.WAYLAND_DISPLAY?'wayland':null;
++ if(chosen)app.commandLine.appendSwitch('ozone-platform',chosen);
+ }
+ const fs=require('node:fs');
+ function recordDiagnostic(kind,message){
+  try{const dir=app.getPath('userData');fs.mkdirSync(dir,{recursive:true});const file=path.join(dir,'diagnostics.log');if(fs.existsSync(file)&&fs.statSync(file).size>1024*1024){fs.rmSync(file+'.previous',{force:true});fs.renameSync(file,file+'.previous');}fs.appendFileSync(file,JSON.stringify({time:new Date().toISOString(),version:app.getVersion(),kind,message:String(message).slice(0,4000)})+'\n');}catch{}
+ }
+-let server, win, social, display;
++let server, win, social, display, linuxMouse;
+ app.whenReady().then(async () => {
+   Menu.setApplicationMenu(null);
+   try {
+@@ -40,7 +41,7 @@
+       minHeight: 700,
+       backgroundColor: "#0a1119",
+       autoHideMenuBar: true,
+-      title: "VOIDLINE / Stabilization 1.0.0",
++      title: "VOIDLINE / Stabilization 1.0.1",
+       webPreferences: {
+         preload: path.join(__dirname, "preload.cjs"),
+         nodeIntegration: false,
+@@ -48,6 +49,14 @@
+         sandbox: true,
+       },
+     });
++    if(process.platform==='linux'){
++      const {createLinuxInput}=await import('./linux-input.mjs');
++      const executable=app.isPackaged?path.join(process.resourcesPath,'app.asar.unpacked/build/native/linux-raw-input'):path.join(__dirname,'build/native/linux-raw-input');
++      linuxMouse=createLinuxInput({executable,ozone:app.commandLine.getSwitchValue('ozone-platform')||'x11',getWindow:()=>win,
++        sendDelta:value=>{if(!win.isDestroyed())win.webContents.send('voidline:relative-mouse',value);},
++        sendStatus:value=>{if(!win.isDestroyed())win.webContents.send('voidline:mouse-status',value);}});
++      win.on('blur',()=>linuxMouse.stop());win.on('minimize',()=>linuxMouse.stop());win.on('closed',()=>linuxMouse.close());
++    }
+     win.removeMenu();
+     win.webContents.setIgnoreMenuShortcuts(true);
+     win.webContents.setZoomFactor(1);
+@@ -55,6 +64,11 @@
+     let matchInputActive=false;
+     const trustedInputEvent=event=>event.sender===win.webContents && event.senderFrame===win.webContents.mainFrame && event.senderFrame?.url?.startsWith(origin+"/");
+     ipcMain.on("voidline:input-state",(event,value)=>{if(trustedInputEvent(event)&&typeof value==="boolean")matchInputActive=value;});
++    ipcMain.handle('voidline:mouse-capture',async(event,value)=>{
++      if(!trustedInputEvent(event)||typeof value!=='boolean')return {active:false,backend:'browser',reason:'Недопустимый запрос'};
++      return linuxMouse?linuxMouse.capture(value):{active:false,backend:'browser',reason:'Системный Pointer Lock'};
++    });
++    win.webContents.on('did-start-loading',()=>linuxMouse?.stop());
+     win.webContents.on("before-input-event",(event,input)=>{
+       win.webContents.setIgnoreMenuShortcuts(true);
+       // In a match, DOM handles prevention so Ctrl+W still reaches WASD.
+@@ -65,6 +79,7 @@
+     win.webContents.on("did-finish-load",()=>{matchInputActive=false;win.webContents.setZoomFactor(1);});
+     win.webContents.on('render-process-gone',async(_event,details)=>{
+       if(shuttingDown||details.reason==='clean-exit')return;
++      linuxMouse?.stop();
+       recordDiagnostic('renderer-gone',JSON.stringify(details));
+       const r=await dialog.showMessageBox(win,{type:'error',title:'VOIDLINE: сбой графики',message:'Игровой процесс завершился: '+details.reason,detail:'Журнал сохранён в diagnostics.log в папке данных приложения. Можно перезапустить игру на низких настройках.',buttons:['Перезапустить · низкая графика','Закрыть'],defaultId:0,cancelId:1});
+       if(r.response===0&&!win.isDestroyed()){const old=await settingsStore.load();await settingsStore.save({...old,frameCap:60,renderScale:.65,renderResolution:'native',shadows:'off',aa:'fxaa'});await win.loadURL(origin);}else app.quit();
+@@ -161,6 +176,7 @@
+   if (shuttingDown) return;
+   event.preventDefault();
+   shuttingDown = true;
++  linuxMouse?.close();
+   server?.close();
+   try {
+     await display?.close();
+--- a/linux-input.mjs
++++ b/linux-input.mjs
+@@ -0,0 +1,42 @@
++import {spawn} from 'node:child_process';
++// OS motion is read only during an explicitly acquired in-game pointer lock.
++export function createLinuxInput({platform=process.platform,display=process.env.DISPLAY,ozone='x11',executable,getWindow,sendDelta=()=>{},sendStatus=()=>{},spawnHelper=spawn}){
++ let session=null,closing=false;
++ const stop=()=>{const s=session;session=null;if(!s)return;clearInterval(s.flush);clearTimeout(s.timeout);s.resolve?.({active:false,backend:'browser',reason:'Захват освобождён'});s.resolve=null;s.child.kill();};
++ const fallback=reason=>({active:false,backend:'browser',reason});
++ async function capture(value){
++  if(!value){stop();return fallback('Захват освобождён');}
++  const win=getWindow();
++  if(closing||!win||win.isDestroyed()||!win.isFocused())return fallback('Окно игры не в фокусе');
++  if(platform!=='linux')return fallback('Системный Pointer Lock');
++  if(!display||ozone==='wayland')return fallback('Для XInput2 нужен X11 / XWayland. Запусти игру в сеансе с DISPLAY.');
++  if(session)return session.promise;
++  const handle=win.getNativeWindowHandle();if(!handle||handle.length<4)return fallback('Нет X11-окна');
++  let resolve;const promise=new Promise(r=>resolve=r);
++  const s={child:null,promise,resolve,ready:false,buffer:'',dx:0,dy:0,flush:null,timeout:null};session=s;
++  const finish=result=>{s.resolve?.(result);s.resolve=null;};
++  const fail=reason=>{if(session!==s)return;const resolve=s.resolve;s.resolve=null;stop();const status=fallback(reason);resolve?.(status);sendStatus(status);};
++  try{s.child=spawnHelper(executable,[handle.readUInt32LE(0).toString(16)],{stdio:['ignore','pipe','pipe'],windowsHide:true,env:{...process.env,DISPLAY:display}});}catch(e){session=null;return fallback('XInput2: '+e.message);}
++  s.timeout=setTimeout(()=>fail('XInput2 не ответил; используется Pointer Lock'),3000);
++  s.child.stdout.setEncoding('utf8');s.child.stdout.on('data',chunk=>{
++   if(session!==s)return;s.buffer+=chunk;
++   if(s.buffer.length>65536){fail('Некорректный поток XInput2');return;}
++   let n;while((n=s.buffer.indexOf('\n'))>=0){const line=s.buffer.slice(0,n);s.buffer=s.buffer.slice(n+1);
++    if(line==='READY'){s.ready=true;clearTimeout(s.timeout);finish({active:true,backend:'xinput2',reason:'Linux XInput2 · без границ экрана'});continue;}
++    if(!s.ready)continue;const parts=line.trim().split(/\s+/);if(parts.length!==2)continue;
++    const [dx,dy]=parts.map(Number);if(Number.isFinite(dx)&&Number.isFinite(dy)){s.dx+=Math.max(-10000,Math.min(10000,dx));s.dy+=Math.max(-10000,Math.min(10000,dy));}
++   }
++  });
++  s.child.on('error',e=>fail('XInput2 недоступен: '+(e.code||e.message)));
++  s.child.on('exit',()=>fail('XInput2 остановлен; используется Pointer Lock'));
++  s.child.stderr.on('data',()=>{});
++  s.flush=setInterval(()=>{if(session!==s||!s.ready)return;const w=getWindow();if(!w||w.isDestroyed()||!w.isFocused()){stop();sendStatus(fallback('Окно не в фокусе'));return;}if(s.dx||s.dy){const dx=s.dx,dy=s.dy;s.dx=s.dy=0;sendDelta({dx,dy});}},8);
++  s.flush.unref?.();return promise;
++ }
++ return {capture,stop,close(){closing=true;stop();}};
++}
++export function linuxOzone({platform=process.platform,env=process.env,explicit}={}){
++ if(platform!=='linux')return null;if(explicit)return explicit;
++ if(['x11','wayland'].includes(env.VOIDLINE_OZONE_PLATFORM))return env.VOIDLINE_OZONE_PLATFORM;
++ return env.DISPLAY?'x11':env.WAYLAND_DISPLAY?'wayland':null;
++}
+--- a/native/linux-raw-input.c
++++ b/native/linux-raw-input.c
+@@ -0,0 +1,44 @@
++// Relative XInput2 motion while the specified VOIDLINE window owns keyboard focus.
++// No pointer warping, injection, keyboard hooks, network access or background capture.
++#include <X11/Xlib.h>
++#include <X11/extensions/XInput2.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <math.h>
++#include <errno.h>
++static int focused(Display *d, Window target) {
++  Window w; int revert; XGetInputFocus(d,&w,&revert);
++  for(int i=0;i<32 && w!=None && w!=PointerRoot;i++) {
++    if(w==target)return 1;
++    Window root,parent,*children=NULL;unsigned int count=0;
++    if(!XQueryTree(d,w,&root,&parent,&children,&count))return 0;
++    if(children)XFree(children);
++    if(w==root||parent==w)break;
++    w=parent;
++  }
++  return 0;
++}
++int main(int argc,char **argv) {
++  if(argc!=2)return 2;
++  char *end=NULL;errno=0;unsigned long id=strtoul(argv[1],&end,16);
++  if(errno||!id||!end||*end)return 2;
++  Display *d=XOpenDisplay(NULL);if(!d){fprintf(stderr,"XOpenDisplay failed\n");return 3;}
++  int opcode,event,error,major=2,minor=2;
++  if(!XQueryExtension(d,"XInputExtension",&opcode,&event,&error)||XIQueryVersion(d,&major,&minor)!=Success){XCloseDisplay(d);return 4;}
++  unsigned char bits[XIMaskLen(XI_RawMotion)]={0};XISetMask(bits,XI_RawMotion);
++  XIEventMask mask={XIAllMasterDevices,sizeof(bits),bits};
++  if(XISelectEvents(d,DefaultRootWindow(d),&mask,1)!=Success){XCloseDisplay(d);return 5;}
++  XSync(d,False);setvbuf(stdout,NULL,_IOLBF,0);puts("READY");
++  for(;;){
++    XEvent e;XNextEvent(d,&e);
++    if(e.type!=GenericEvent||e.xcookie.extension!=opcode||!XGetEventData(d,&e.xcookie))continue;
++    if(e.xcookie.evtype==XI_RawMotion && focused(d,(Window)id)){
++      XIRawEvent *r=e.xcookie.data;double dx=0,dy=0,*v=r->raw_values;
++      for(int axis=0;axis<r->valuators.mask_len*8;axis++)if(XIMaskIsSet(r->valuators.mask,axis)){
++        double value=*v++;if(axis==0)dx=value;else if(axis==1)dy=value;
++      }
++      if(isfinite(dx)&&isfinite(dy)&&(dx!=0||dy!=0))printf("%.8g %.8g\n",dx,dy);
++    }
++    XFreeEventData(d,&e.xcookie);
++  }
++}
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "voidline-arena",
+-  "version": "1.0.0",
++  "version": "1.0.1",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "voidline-arena",
+-      "version": "1.0.0",
++      "version": "1.0.1",
+       "license": "MIT",
+       "dependencies": {
+         "selfsigned": "^2.4.1",
+--- a/package.json
++++ b/package.json
+@@ -1,15 +1,17 @@
+ {
+   "name": "voidline-arena",
+-  "version": "1.0.0",
++  "version": "1.0.1",
+   "private": true,
+   "description": "VOIDLINE tactical FPS — stabilization release",
+   "main": "electron.cjs",
+   "type": "module",
+   "scripts": {
+-    "start": "electron .",
++    "start": "node tools/start.cjs",
+     "server": "node server.mjs",
+     "test": "node --test tests/*.test.mjs",
+-    "dist": "electron-builder --linux AppImage --win nsis portable --x64"
++    "dist": "electron-builder --linux AppImage --win nsis portable --x64",
++    "build:linux-input": "node tools/build-linux-input.cjs",
++    "predist": "npm run build:linux-input"
+   },
+   "dependencies": {
+     "selfsigned": "^2.4.1",
+@@ -40,7 +42,9 @@
+       "net-session.mjs",
+       "peer-discovery.mjs",
+       "RELEASE-1.0-RU.md",
+-      "QA-1.0-RU.md"
++      "QA-1.0-RU.md",
++      "linux-input.mjs",
++      "RELEASE-1.0.1-RU.md"
+     ],
+     "win": {
+       "target": [
+@@ -59,7 +63,8 @@
+       "category": "Game",
+       "artifactName": "VOIDLINE-${version}-Linux-x86_64.AppImage",
+       "syncDesktopName": true,
+-      "icon": "build/icon.png"
++      "icon": "build/icon.png",
++      "executableName": "voidline-arena"
+     },
+     "mac": {
+       "target": "dmg"
+--- a/preload.cjs
++++ b/preload.cjs
+@@ -73,3 +73,9 @@
+ 
+ // Boolean state only; no arbitrary key injection or native cursor control exposed.
+ contextBridge.exposeInMainWorld("voidlineInput",Object.freeze({setActive:value=>{if(typeof value==="boolean")ipcRenderer.send("voidline:input-state",value);}}));
++
++if(process.platform==='linux')contextBridge.exposeInMainWorld('voidlineMouse',Object.freeze({
++ capture:value=>typeof value==='boolean'?ipcRenderer.invoke('voidline:mouse-capture',value):Promise.resolve({active:false,backend:'browser'}),
++ onDelta:callback=>{const listener=(_event,value)=>callback(value);ipcRenderer.on('voidline:relative-mouse',listener);return ()=>ipcRenderer.removeListener('voidline:relative-mouse',listener);},
++ onStatus:callback=>{const listener=(_event,value)=>callback(value);ipcRenderer.on('voidline:mouse-status',listener);return ()=>ipcRenderer.removeListener('voidline:mouse-status',listener);}
++}));
+--- a/public/chat-notices.mjs
++++ b/public/chat-notices.mjs
+@@ -0,0 +1,26 @@
++// In-app chat alerts. Text stays text; no HTML from network messages is evaluated.
++export function incomingMessages(previous,current){
++ if(!previous)return [];
++ const known=new Set(previous.filter(m=>!m.mine).map(m=>m.id));
++ return current.filter(m=>!m.mine&&!known.has(m.id));
++}
++export function createChatNotices({doc=globalThis.document,win=globalThis.window,onSound=()=>{},onOpen=()=>{},onUnread=()=>{}}={}){
++ const region=doc.createElement('section');region.id='chatNotices';region.setAttribute('aria-live','polite');region.setAttribute('aria-label','Новые сообщения');doc.body.append(region);
++ const unread=new Map(),timers=new Set();let lastSound=-Infinity;
++ const key=(scope,senderId)=>scope==='p2p'?'p2p:'+senderId:'match';
++ const totals=()=>({match:unread.get('match')||0,p2p:[...unread].filter(([k])=>k.startsWith('p2p:')).reduce((n,[,v])=>n+v,0)});
++ const publish=()=>onUnread(totals());
++ function markRead(scope,senderId){if(scope==='p2p'&&!senderId){for(const k of unread.keys())if(k.startsWith('p2p:'))unread.delete(k);}else unread.delete(key(scope,senderId));publish();}
++ function notify({scope='match',senderId='',name='',text='',mine=false,visible=false}){
++  if(mine||!String(text).trim())return;
++  if(visible&&!doc.hidden&&doc.hasFocus()){markRead(scope,senderId);return;}
++  const k=key(scope,senderId);unread.set(k,Math.min(999,(unread.get(k)||0)+1));publish();
++  const button=doc.createElement('button');button.className='chatNotice';button.type='button';
++  const title=doc.createElement('b'),body=doc.createElement('span');title.textContent=(scope==='p2p'?'P2P · ':'Чат матча · ')+String(name).slice(0,40);body.textContent=String(text).slice(0,180);button.append(title,body);
++  button.onclick=()=>{markRead(scope,senderId);button.remove();onOpen(scope,senderId);};
++  region.append(button);while(region.children.length>3)region.firstChild.remove();
++  const timer=win.setTimeout(()=>{button.remove();timers.delete(timer);},6500);timers.add(timer);
++  const now=Date.now();if(now-lastSound>=700){lastSound=now;onSound();}
++ }
++ return {notify,markRead,get unread(){return totals();},destroy(){for(const t of timers)win.clearTimeout(t);timers.clear();region.remove();unread.clear();}};
++}
+--- a/public/diagnostics.mjs
++++ b/public/diagnostics.mjs
+@@ -8,7 +8,7 @@
+   window.voidlineDiagnostics?.record(entry)?.catch(()=>{});
+  };
+  async function saveReport(){
+-  const text=JSON.stringify({version:'1.0.0',info:getInfo(),events:records},null,2),a=document.createElement('a');
++  const text=JSON.stringify({version:'1.0.1',info:getInfo(),events:records},null,2),a=document.createElement('a');
+   const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));a.href=url;a.download='VOIDLINE-diagnostics.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  async function safeReload(){
+--- a/public/game.mjs
++++ b/public/game.mjs
+@@ -1,3 +1,4 @@
++import {createChatNotices} from "./chat-notices.mjs";
+ import {aimDelta} from "./aim.mjs";
+ import {purchaseError} from "./purchase.mjs";
+ import {sideLabel,spectatorTarget,flashOpacity} from "./match-ui.mjs";
+@@ -73,7 +74,7 @@
+ const postFX = createPostFX(renderer);
+ let prefs = normalizeSettings(null),
+   inventoryUI;
+-const diagnostics=setupDiagnostics(()=>({version:'1.0.0',platform:navigator.platform,userAgent:navigator.userAgent,graphics:{shadows:prefs.shadows,renderScale:prefs.renderScale,aa:prefs.aa},gpu:{...renderer.info.memory}}));
++const diagnostics=setupDiagnostics(()=>({version:'1.0.1',platform:navigator.platform,userAgent:navigator.userAgent,graphics:{shadows:prefs.shadows,renderScale:prefs.renderScale,aa:prefs.aa},gpu:{...renderer.info.memory}}));
+ const down = (name) => actionDown(keys, prefs, name);
+ const scene = new THREE.Scene();
+ scene.background = new THREE.Color("#a7d5e5");
+@@ -201,7 +202,7 @@
+  const w=WEAPONS[id],e=state?.roundEvent||{},price=Math.round(SHOP[id].price*(e.price??1));
+  $("shopStats").textContent=w?`$${price} · ${w.mag} / ${w.reserve} · Урон ${Math.round(w.damage*(e.damage??1))} · ${Math.round(60/(w.delay*(e.cadence??1)))} выстр/мин · Перезарядка ${(w.reload*(e.reload??1)).toFixed(2)} с` : "Снаряжение · $"+price;
+  if(me&&state){const reason=purchaseError(me,id,{phase:state.phase,roundEvent:state.roundEvent,map:currentMap,attackTeam:state.attackTeam});if(reason)$('shopStats').textContent+=' · '+reason;}
+- shopPreview ||= createShopPreview($("shopCanvas"));shopPreview.show(id);
++ shopPreview ||= createShopPreview($("shopCanvas"));shopPreview.show(id,me&&state&&me.team===state.attackTeam?1:0);
+ }
+ const mobile = navigator.maxTouchPoints>0 && matchMedia("(pointer:coarse)").matches;
+ let spectateId=null,spectateCameraId=null;
+@@ -351,7 +352,7 @@
+   } else {
+     const o = audio.createOscillator();
+     o.type = kind === "hit" ? "sine" : "triangle";
+-    o.frequency.setValueAtTime(kind === "hit" ? 800 : 180, t);
++    o.frequency.setValueAtTime(kind === "chat" ? 960 : kind === "hit" ? 800 : 180, t);
+     o.frequency.exponentialRampToValueAtTime(70, t + 0.08);
+     g.gain.setValueAtTime(0.08, t);
+     g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+@@ -617,7 +618,7 @@
+       pendingTeamJoin=sendJoin;teamUI.show(m,chosenTeam);
+     }
+     if(m.type?.startsWith("voice-"))voice.handle(m);
+-    if(m.type==="chat") addChat(m.name,m.text);
++    if(m.type==="chat") addChat(m.name,m.text,m.id);
+     if(m.type==="pong" && Number.isFinite(m.sent)) {const rtt=Date.now()-m.sent;$("netStatus").textContent=Math.round(rtt)+" ms";netOffset=m.time-Date.now()+rtt/2;}
+     if (m.type === "join-error") { joinError=m.error;setStatus(m.error); }
+     if (m.type === "welcome") {
+@@ -713,12 +714,33 @@
+   $("scoreboard").hidden=true;
+ }
+ function gameModalOpen(){
+-  return settingsUI.isOpen() || !$("buyMenu").hidden || !!document.getElementById("matchChat")&&!$("matchChat").hidden;
+-}
++  return !$("socialDialog").hidden || settingsUI.isOpen() || !$("buyMenu").hidden || !!document.getElementById("matchChat")&&!$("matchChat").hidden;
++}
++let nativeMouse=false,mouseCaptureRevision=0;
++const mouseBackendLabel=document.createElement('small');mouseBackendLabel.id='mouseBackend';mouseBackendLabel.textContent='Ввод: системный Pointer Lock';$('pauseInfo').after(mouseBackendLabel);
++async function setNativeCapture(value){
++ const revision=++mouseCaptureRevision;nativeMouse=false;
++ if(!window.voidlineMouse)return;
++ try{
++  const result=await window.voidlineMouse.capture(value);
++  if(revision!==mouseCaptureRevision)return;
++  nativeMouse=!!value&&!!result.active&&hasGameControl();
++  mouseBackendLabel.textContent='Ввод: '+(result.reason||result.backend||'Pointer Lock');
++  if(value)diagnostics.log('mouse-backend',JSON.stringify(result));
++ }catch(error){nativeMouse=false;mouseBackendLabel.textContent='Ввод: Pointer Lock · XInput2 недоступен';diagnostics.log('mouse-backend',error.message);}
++}
++function applyRelativeMouse(dx,dy){
++ if(!hasGameControl()||!me?.alive||mobile)return;
++ const sensitivity=prefs.sensitivity*(scoped&&WEAPONS[me?.weapon]?.scope?prefs.scopeSensitivity:1);
++ const aim=aimDelta(yaw,pitch,dx,dy,sensitivity,prefs.invertY);yaw=aim.yaw;pitch=aim.pitch;
++}
++window.voidlineMouse?.onDelta(({dx,dy})=>{if(nativeMouse&&Number.isFinite(dx)&&Number.isFinite(dy))applyRelativeMouse(dx,dy);});
++window.voidlineMouse?.onStatus(result=>{nativeMouse=false;mouseBackendLabel.textContent='Ввод: '+(result.reason||'Pointer Lock');});
+ const capture=createPointerCapture({element:canvas,
+   enabled:()=>active&&connected&&!gameModalOpen(),
+   onChange:value=>{
+     locked=value;resetGameControls();document.body.classList.toggle("mouseCaptured",value);
++    setNativeCapture(value);
+     if(active && !gameModalOpen()){
+       $("pause").hidden=value;
+       if(!value&&connected)$("pauseInfo").textContent="Мышь освобождена. Нажми «Продолжить», чтобы захватить её. Esc — пауза.";
+@@ -743,6 +765,7 @@
+ $("resume").onclick = requestLock;
+ $("leave").onclick = async () => {
+   voice.stop();
++  chatNotices.markRead("match");
+   active = false;
+   clearTimeout(reconnectTimer); resumeTokens.clear();
+   utilityFX.clear();
+@@ -805,14 +828,7 @@
+   if(preventPageKey(e,{active,editing:isEditableTarget(e.target),controlling:hasGameControl(),bindings:prefs.bindings}))e.preventDefault();
+ },{capture:true});
+ document.addEventListener("wheel",e=>{if(e.ctrlKey||e.metaKey)e.preventDefault();},{capture:true,passive:false});
+-document.addEventListener("mousemove", (e) => {
+-  if(mobile)return;
+-  if (hasGameControl() && me?.alive) {
+-    const sensitivity=prefs.sensitivity*(scoped && WEAPONS[me?.weapon]?.scope ? prefs.scopeSensitivity : 1);
+-    const aim=aimDelta(yaw,pitch,e.movementX,e.movementY,sensitivity,prefs.invertY);
+-    yaw=aim.yaw;pitch=aim.pitch;
+-  }
+-});
++document.addEventListener("mousemove",e=>{if(!nativeMouse)applyRelativeMouse(e.movementX,e.movementY);});
+ document.addEventListener("keydown", (e) => {
+   if (!active || settingsUI.isOpen() || isEditableTarget(e.target)) return;
+   if(!me?.alive&&hasGameControl()&&['ArrowLeft','ArrowRight'].includes(e.code)){
+@@ -1428,10 +1444,18 @@
+ const chatPanel=document.createElement("section");chatPanel.id="matchChat";chatPanel.hidden=true;
+ chatPanel.innerHTML='<header>ЧАТ МАТЧА <span id="netStatus"></span></header><div id="matchChatLines" aria-live="polite"></div><form id="matchChatForm"><input id="matchChatText" maxlength="180" placeholder="Сообщение в матч…" aria-label="Сообщение"><button>↗</button></form>';
+ document.body.append(chatPanel);
+-function addChat(name,text){const row=document.createElement("p");const b=document.createElement("b");b.textContent=name+": ";row.append(b,document.createTextNode(text));$("matchChatLines").append(row);while($("matchChatLines").children.length>30)$("matchChatLines").firstChild.remove();$("matchChatLines").scrollTop=100000;}
++function addChat(name,text,senderId){chatNotices.notify({scope:"match",senderId,name,text,mine:senderId?senderId===myId:name===me?.name,visible:!chatPanel.hidden});const row=document.createElement("p");const b=document.createElement("b");b.textContent=name+": ";row.append(b,document.createTextNode(text));$("matchChatLines").append(row);while($("matchChatLines").children.length>30)$("matchChatLines").firstChild.remove();$("matchChatLines").scrollTop=100000;}
+ $("matchChatForm").onsubmit=e=>{e.preventDefault();if(connected&&$("matchChatText").value.trim())socket.send(JSON.stringify({type:"chat",text:$("matchChatText").value}));$("matchChatText").value="";};
+-const chatToggle=document.createElement("button");chatToggle.id="chatToggle";chatToggle.textContent="ЧАТ";chatToggle.onclick=()=>{chatPanel.hidden=!chatPanel.hidden;if(!chatPanel.hidden){releaseGameControls();$("matchChatText").focus();}else if(active)requestLock();};document.body.append(chatToggle);
++const chatToggle=document.createElement("button");chatToggle.id="chatToggle";chatToggle.textContent="ЧАТ";chatToggle.onclick=()=>{chatPanel.hidden=!chatPanel.hidden;if(!chatPanel.hidden){chatNotices.markRead("match");releaseGameControls();$("matchChatText").focus();}else if(active)requestLock();};document.body.append(chatToggle);
+ const invite=document.createElement("button");invite.className="secondary";invite.textContent="ПРИГЛАШЕНИЕ ПО АДРЕСУ";invite.onclick=()=>{const addr=$("shareAddress").value;if(!addr){$("hostMessage").textContent="Сначала открой LAN. Для интернета требуется доступный сервер или VPN.";return;}const text="VOIDLINE · подключись к "+addr;navigator.clipboard?.writeText(text).then(()=>$("hostMessage").textContent="Приглашение скопировано").catch(()=>$("hostMessage").textContent=text);};$("hostPanel").append(invite);
++const socialButtonText=$('openSocial').textContent;
++const chatNotices=createChatNotices({onSound:()=>{audioInit();sound('chat');},onOpen:(scope,id)=>{
++ if(scope==='p2p'){releaseGameControls();window.dispatchEvent(new CustomEvent('voidline-open-peer',{detail:{id}}));}
++ else if(chatPanel.hidden)chatToggle.click();
++},onUnread:counts=>{chatToggle.textContent=counts.match?'ЧАТ · '+counts.match:'ЧАТ';chatToggle.classList.toggle('hasUnread',counts.match>0);$('openSocial').textContent=socialButtonText+(counts.p2p?' · '+counts.p2p:'');$('openSocial').classList.toggle('hasUnread',counts.p2p>0);}});
++window.addEventListener('voidline-chat-message',e=>chatNotices.notify(e.detail));
++window.addEventListener('voidline-chat-read',e=>chatNotices.markRead(e.detail.scope,e.detail.id));
++document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.hasFocus()&&!chatPanel.hidden)chatNotices.markRead('match');});
+ setInterval(()=>{chatToggle.hidden=!active;if(!active)chatPanel.hidden=true;if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify({type:"ping",sent:Date.now()}));},2000);
+ // Android and touch-screen controls use the same authoritative server input.
+ if(mobile){
+--- a/public/index.html
++++ b/public/index.html
+@@ -3,7 +3,7 @@
+   <head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+-    <title>VOIDLINE — Stabilization 1.0.0</title>
++    <title>VOIDLINE — Stabilization 1.0.1</title>
+     <link rel="icon" type="image/svg+xml" href="assets/voidline.svg" />
+     <link rel="stylesheet" href="style.css" />
+   </head>
+@@ -13,7 +13,7 @@
+     <main id="menu" class="lobbyMenu">
+       <header class="lobbyTop">
+         <a class="lobbyLogo" href="#" aria-label="VOIDLINE">V/</a
+-        ><span class="edition">VOIDLINE<br /><small>FIX / 1.0.0</small></span>
++        ><span class="edition">VOIDLINE<br /><small>FIX / 1.0.1</small></span>
+         <nav aria-label="Разделы игры">
+           <button data-pane="arsenal">АРСЕНАЛ</button
+           ><button data-pane="inventory">ИНВЕНТАРЬ</button
+@@ -138,7 +138,7 @@
+         <p class="railFoot">P2P · TLS 1.3<br />Без центрального сервера</p>
+       </aside>
+       <footer class="lobbyFooter">
+-        <span>VOIDLINE / 1.0.0</span
++        <span>VOIDLINE / 1.0.1</span
+         ><span>Оригинальные модели и окружение · LAN / VPN</span>
+       </footer>
+     </main>
+--- a/public/shop-preview.mjs
++++ b/public/shop-preview.mjs
+@@ -14,6 +14,30 @@
+ }
+ export function createShopPreview(canvas){
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});renderer.setPixelRatio(1);renderer.toneMapping=THREE.ACESFilmicToneMapping;
+- const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(35,1,.01,20);scene.add(new THREE.HemisphereLight('#e1f3ff','#5f5545',3));const sun=new THREE.DirectionalLight('#fff1dc',5);sun.position.set(2,3,2);scene.add(sun);scene.environment=createStudioEnvironment(renderer);let model=null,lastId=null;const operator=buildOperator();operator.rotation.y=Math.PI-.25;scene.add(operator);operator.userData.weapon.visible=false;
+- return {show(id){if(id===lastId)return;lastId=id;if(model){disposeOwnedTree(model);model=null;}if(!WEAPONS[id]&&!validUtility(id))return;model=validUtility(id)?buildGrenade(id):buildWeapon(id);model.position.copy(operator.userData.weapon.position);model.rotation.copy(operator.userData.weapon.rotation);operator.userData.body.add(model);},render(time){const w=Math.max(200,canvas.clientWidth),h=Math.max(160,canvas.clientHeight);if(canvas.width!==w||canvas.height!==h)renderer.setSize(w,h,false);camera.aspect=w/h;camera.position.set(.15,1.1,3.6);camera.lookAt(0,1,0);camera.updateProjectionMatrix();operator.rotation.y=Math.PI-.25+Math.sin(time*.3)*.1;renderer.render(scene,camera);}};
++ const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(35,1,.01,20);
++ scene.add(new THREE.HemisphereLight('#e1f3ff','#5f5545',3));
++ const sun=new THREE.DirectionalLight('#fff1dc',5);sun.position.set(2,3,2);scene.add(sun);scene.environment=createStudioEnvironment(renderer);
++ let model=null,lastId=null,operator=null,lastSide=null;
++ return {
++  get side(){return lastSide;},
++  show(id,side=0){
++   side=side===1?1:0;
++   if(side!==lastSide){
++    if(model){disposeOwnedTree(model);model=null;}
++    if(operator)disposeOwnedTree(operator);
++    operator=buildOperator(side);operator.rotation.y=Math.PI-.25;scene.add(operator);operator.userData.weapon.visible=false;
++    lastSide=side;lastId=null;
++    canvas.setAttribute('aria-label','Предпросмотр агента '+(side===1?'Т · Атака':'КТ · Защита'));
++   }
++   if(id===lastId)return;lastId=id;
++   if(model){disposeOwnedTree(model);model=null;}
++   if(!WEAPONS[id]&&!validUtility(id))return;
++   model=validUtility(id)?buildGrenade(id):buildWeapon(id);model.position.copy(operator.userData.weapon.position);model.rotation.copy(operator.userData.weapon.rotation);operator.userData.body.add(model);
++  },
++  render(time){
++   if(!operator)return;
++   const w=Math.max(200,canvas.clientWidth),h=Math.max(160,canvas.clientHeight);if(canvas.width!==w||canvas.height!==h)renderer.setSize(w,h,false);
++   camera.aspect=w/h;camera.position.set(.15,1.1,3.6);camera.lookAt(0,1,0);camera.updateProjectionMatrix();operator.rotation.y=Math.PI-.25+Math.sin(time*.3)*.1;renderer.render(scene,camera);
++  }
++ };
+ }
+--- a/public/social-ui.mjs
++++ b/public/social-ui.mjs
+@@ -1,3 +1,4 @@
++import {incomingMessages} from "./chat-notices.mjs";
+ const $ = (id) => document.getElementById(id);
+ export function setupMenuTabs() {
+   for (const button of document.querySelectorAll("[data-pane]"))
+@@ -48,6 +49,12 @@
+     return button;
+   }
+   function show(s) {
++    const previous=current;
++    for(const f of s.friends){
++      const old=previous?.friends.find(p=>p.id===f.id);
++      for(const m of incomingMessages(previous?(old?.messages||[]):null,f.messages||[]))
++        window.dispatchEvent(new CustomEvent('voidline-chat-message',{detail:{scope:'p2p',senderId:f.id,name:f.name,text:m.text,visible:!$('socialDialog').hidden&&selected===f.id}}));
++    }
+     current = s;
+     const nearby=$('nearbyPeers');
+     const nearbyKey=JSON.stringify((s.nearby||[]).map(p=>[p.id,p.host,p.port,p.name]));
+@@ -125,6 +132,7 @@
+       $("peerList").dataset.key = signature;
+     }
+     const f = s.friends.find((f) => f.id === selected);
++    if(f&&!$('socialDialog').hidden&&!document.hidden&&document.hasFocus())window.dispatchEvent(new CustomEvent('voidline-chat-read',{detail:{scope:'p2p',id:f.id}}));
+     $("chatName").textContent = f
+       ? f.name + (f.online ? " · В СЕТИ" : " · НЕ ПОДКЛЮЧЁН")
+       : "Выбери друга";
+@@ -200,6 +208,7 @@
+   scan.innerHTML='<button id="scanPeers" class="secondary">НАЙТИ ИГРОКОВ В LAN</button><small id="discoveryStatus">Автообновление каждые 3 секунды при открытом P2P. Интернет-подбор не поддерживается.</small><div id="nearbyPeers"></div>';
+   $('socialDialog').querySelector('.socialBody').before(scan);
+   $('scanPeers').onclick=()=>action('scan',{port:Number($('peerPort').value)},'Поиск LAN включён. Найденных игроков можно добавить по коду.');
++  window.addEventListener('voidline-open-peer',e=>{selected=e.detail?.id||selected;open();if(current)show(current);});
+   $("openSocial").onclick = open;
+   $("pauseSocial").onclick = open;
+   $("closeSocial").onclick = () => {
+--- a/public/style.css
++++ b/public/style.css
+@@ -2417,3 +2417,5 @@
+ #crossSample i{position:absolute;display:block}
+ 
+ .peerDiscovery{padding:12px 20px;border-top:1px solid #587077;max-height:180px;overflow:auto}.peerDiscovery small{display:block;margin:8px 0;color:#bbcdd4}#nearbyPeers{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:#b9cad2}
++
++#chatNotices{position:fixed;right:24px;top:110px;z-index:160;display:flex;flex-direction:column;gap:10px;width:min(360px,calc(100vw - 48px));pointer-events:none}#chatNotices .chatNotice{pointer-events:auto;display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:#112c35f5;border:1px solid #83d3ca;border-left:4px solid #83d3ca;padding:12px 16px;text-align:left;color:#e7f2f3;overflow-wrap:anywhere;box-shadow:0 6px 20px #0006}#chatNotices .chatNotice b{font-size:12px;color:#aff0df}#chatNotices .chatNotice span{font-size:13px;line-height:1.4}.hasUnread{outline:2px solid #e6b86d!important}#mouseBackend{display:block;color:#aac6c7;font-size:11px;line-height:1.5;margin:8px 0}
+--- a/server.mjs
++++ b/server.mjs
+@@ -339,7 +339,7 @@
+       }
+       if(m.type === "chat" && p && Date.now()-lastChat>750 && typeof m.text==="string"){
+         lastChat=Date.now();const text=m.text.replace(/[\x00-\x1f]/g,"").trim().slice(0,180);
+-        if(text)for(const c of clients.keys())if(c.readyState===WebSocket.OPEN)c.send(JSON.stringify({type:"chat",name:p.name,text,team:p.team}));
++        if(text)for(const c of clients.keys())if(c.readyState===WebSocket.OPEN)c.send(JSON.stringify({type:"chat",id:p.id,name:p.name,text,team:p.team}));
+       }
+       if (m.type === "input" && p) game.input(p, m, Date.now());
+       if (m.type === "cosmetics" && p) {
+--- a/tests/followup-1.0.1.test.mjs
++++ b/tests/followup-1.0.1.test.mjs
+@@ -0,0 +1,26 @@
++import {test} from 'node:test';import assert from 'node:assert/strict';import {EventEmitter} from 'node:events';import {PassThrough} from 'node:stream';
++import {createLinuxInput,linuxOzone} from '../linux-input.mjs';import {incomingMessages} from '../public/chat-notices.mjs';
++import fs from 'node:fs';
++const wait=ms=>new Promise(r=>setTimeout(r,ms));
++function fixture(){let focused=true,child,count=0;const deltas=[],statuses=[];const win={isDestroyed:()=>false,isFocused:()=>focused,getNativeWindowHandle:()=>Buffer.from([42,0,0,0,0,0,0,0])};const controller=createLinuxInput({platform:'linux',display:':97',executable:'/test/helper',getWindow:()=>win,sendDelta:m=>deltas.push(m),sendStatus:s=>statuses.push(s),spawnHelper:(file,args)=>{assert.equal(file,'/test/helper');assert.deepEqual(args,['2a']);count++;child=new EventEmitter();child.stdout=new PassThrough();child.stderr=new PassThrough();child.killed=false;child.kill=()=>child.killed=true;return child;}});return {controller,get child(){return child;},deltas,statuses,get count(){return count;},blur(){focused=false;}};}
++test('Linux Ozone chooses XWayland with DISPLAY, preserves explicit overrides and pure Wayland fallback',()=>{
++ assert.equal(linuxOzone({platform:'linux',env:{DISPLAY:':0',WAYLAND_DISPLAY:'wayland-0'}}),'x11');assert.equal(linuxOzone({platform:'linux',env:{WAYLAND_DISPLAY:'wayland-0'}}),'wayland');assert.equal(linuxOzone({platform:'linux',env:{DISPLAY:':0'},explicit:'wayland'}),'wayland');assert.equal(linuxOzone({platform:'linux',env:{DISPLAY:':0',VOIDLINE_OZONE_PLATFORM:'wayland'}}),'wayland');assert.equal(linuxOzone({platform:'win32',env:{DISPLAY:':0'}}),null);
++});
++test('native mouse waits for READY, batches relative deltas and ignores malformed values',async()=>{
++ const f=fixture();try{const pending=f.controller.capture(true);f.child.stdout.write('READY\n');assert.equal((await pending).active,true);f.child.stdout.write('12 7\n8 -2\nNaN 2\nmalformed\n');await wait(25);assert.deepEqual(f.deltas,[{dx:20,dy:5}]);assert.equal((await f.controller.capture(true)).active,true);assert.equal(f.count,1);}finally{f.controller.close();}
++});
++test('native mouse stops on release; stale data cannot move a new or unfocused session',async()=>{
++ const f=fixture();try{const promise=f.controller.capture(true);f.child.stdout.write('READY\n');await promise;const child=f.child;await f.controller.capture(false);assert.equal(child.killed,true);child.stdout.write('100 100\n');await wait(15);assert.equal(f.deltas.length,0);const q=f.controller.capture(true);f.child.stdout.write('READY\n');await q;f.blur();f.child.stdout.write('5 5\n');await wait(25);assert.equal(f.child.killed,true);assert.equal(f.deltas.length,0);}finally{f.controller.close();}
++});
++test('native helper failures resolve to ordinary pointer lock, without dangling capture',async()=>{
++ const f=fixture();try{const promise=f.controller.capture(true);f.child.emit('error',Object.assign(Error('not found'),{code:'ENOENT'}));const r=await promise;assert.equal(r.active,false);assert.match(r.reason,/ENOENT/);assert.equal(f.child.killed,true);}finally{f.controller.close();}
++});
++test('Wayland-only backend does not pretend XInput2 is active',async()=>{
++ const c=createLinuxInput({platform:'linux',display:undefined,ozone:'wayland',getWindow:()=>({isDestroyed:()=>false,isFocused:()=>true})});try{const r=await c.capture(true);assert.equal(r.active,false);assert.match(r.reason,/XWayland/);}finally{c.close();}
++});
++test('P2P notifications never replay stored history or notify own outgoing messages',()=>{
++ const a={id:'a',mine:false},b={id:'b',mine:false},mine={id:'c',mine:true};assert.deepEqual(incomingMessages(null,[a]),[]);assert.deepEqual(incomingMessages([a],[a,b,mine]),[b]);assert.deepEqual(incomingMessages([a,b],[a,b]),[]);assert.deepEqual(incomingMessages([], [b]),[b]);
++});
++test('shop side is a separate cache key and renderer supplies current attack/defense role',()=>{
++ const shop=fs.readFileSync(new URL('../public/shop-preview.mjs',import.meta.url),'utf8');assert.match(shop,/side!==lastSide/);assert.match(shop,/buildOperator\(side\)/);const game=fs.readFileSync(new URL('../public/game.mjs',import.meta.url),'utf8');assert.ok(game.includes('shopPreview.show(id,me&&state&&me.team===state.attackTeam?1:0)'));
++});
+--- a/tools/after-pack.cjs
++++ b/tools/after-pack.cjs
+@@ -3,6 +3,12 @@
+ const fs = require("node:fs"),
+   path = require("node:path");
+ module.exports = async (context) => {
++  if(context.electronPlatformName==='linux'){
++    const base=context.appOutDir,exe=path.join(base,'voidline-arena');
++    fs.renameSync(exe,exe+'.bin');
++    fs.copyFileSync(path.join(context.packager.projectDir,'build/native/linux-launcher.sh'),exe);
++    fs.chmodSync(exe,0o755);return;
++  }
+   if (context.electronPlatformName !== "win32") return;
+   const base = context.appOutDir,
+     root = context.packager.projectDir;
+--- a/tools/build-linux-input.cjs
++++ b/tools/build-linux-input.cjs
+@@ -0,0 +1,6 @@
++const {execFileSync}=require('node:child_process'),path=require('node:path'),fs=require('node:fs');
++const root=path.resolve(__dirname,'..'),out=path.join(root,'build/native/linux-raw-input');
++if(process.platform!=='linux'){if(!fs.existsSync(out))throw Error('Build the Linux raw input helper on Linux before packaging an AppImage.');process.exit(0);}
++fs.mkdirSync(path.dirname(out),{recursive:true});
++execFileSync('gcc',['-std=c11','-O2','-Wall','-Wextra','-Werror','-fPIE','-pie','-Wl,-z,relro,-z,now','-o',out,path.join(root,'native/linux-raw-input.c'),'-lX11','-lXi'],{stdio:'inherit'});
++fs.chmodSync(out,0o755);console.log('Built Linux XInput2 relative-input helper');
+--- a/tools/start.cjs
++++ b/tools/start.cjs
+@@ -0,0 +1,7 @@
++const {spawn}=require('node:child_process'),path=require('node:path');
++(async()=>{const root=path.resolve(__dirname,'..'),{linuxOzone}=await import('../linux-input.mjs');
++ const args=process.argv.slice(2),explicit=args.some(a=>a==='--ozone-platform'||a.startsWith('--ozone-platform=')),backend=linuxOzone();
++ const child=spawn(require('electron'),[...(!explicit&&backend?['--ozone-platform='+backend]:[]),root,...args],{stdio:'inherit',env:process.env});
++ child.on('error',e=>{console.error(e.message);process.exit(1);});child.on('exit',code=>process.exit(code??1));
++ for(const signal of ['SIGTERM','SIGINT'])process.on(signal,()=>child.kill(signal));
++})();

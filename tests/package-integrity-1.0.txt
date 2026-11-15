@@ -1,0 +1,3 @@
+linux 19 updated files match source; runtime dependencies present; no QA server hooks
+win 19 updated files match source; runtime dependencies present; no QA server hooks
+Extracted AppImage ASAR matches packaged source, SHA256: 4abe3592d45531e5fb8ce40d5993b10dca96d493f5063584f20b2959e30a10cc

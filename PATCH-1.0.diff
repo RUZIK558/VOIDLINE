@@ -1,0 +1,1205 @@
+--- a/electron.cjs
++++ b/electron.cjs
+@@ -40,7 +40,7 @@
+       minHeight: 700,
+       backgroundColor: "#0a1119",
+       autoHideMenuBar: true,
+-      title: "VOIDLINE / Input & Window Fix 0.10.1",
++      title: "VOIDLINE / Stabilization 1.0.0",
+       webPreferences: {
+         preload: path.join(__dirname, "preload.cjs"),
+         nodeIntegration: false,
+--- a/match.mjs
++++ b/match.mjs
+@@ -1,3 +1,4 @@
++import {purchaseError} from "./public/purchase.mjs";
+ import { randomUUID } from "node:crypto";
+ import {
+   WEAPONS, KNIVES, weaponSlot, ROUND_EVENTS,
+@@ -119,6 +120,9 @@
+     p.roundActive = true;
+     p.input = {};
+     p.path = [];
++    p.botLane = i % 3;
++    p.botSlot = i % 5;
++    p.patrolIndex = 0;
+     p.seenTarget = null;
+     p.reactionAt = 0;
+     p.routeAt = 0;
+@@ -134,12 +138,13 @@
+     p.utility = null;
+     p.throwAt = 0;
+     p.flash = null;
++    p.scoped = false;
+     p.fireDamage = 0;
+     p.blockFireUntilRelease = false;
+     this.paintOwned(p);
+     if (!Object.keys(p.guns).some(id=>weaponSlot(id)==="secondary"))
+       p.guns.pistol = { ammo: WEAPONS.pistol.mag, reserve: WEAPONS.pistol.reserve, skin: p.loadout.pistol, owner: p.id };
+-    p.weapon = Object.keys(p.guns).find(w => weaponSlot(w) === "primary") || Object.keys(p.guns).find(w=>weaponSlot(w)==="secondary") || Object.keys(p.guns)[0];
++    p.weapon = Object.hasOwn(p.guns,p.weapon) && !WEAPONS[p.weapon]?.melee ? p.weapon : Object.keys(p.guns).find(w => weaponSlot(w) === "primary") || Object.keys(p.guns).find(w=>weaponSlot(w)==="secondary") || Object.keys(p.guns)[0];
+     this.applyRoundEvent(p);
+   }
+   nextEvent() {
+@@ -256,22 +261,9 @@
+     this.emit({ type: "win", team: winner, reason, match: this.phase === "match" });
+   }
+   buy(p, item) {
+-    const offer = typeof item === "string" && Object.hasOwn(SHOP, item) ? SHOP[item] : null;
+-    if (!offer) return "Неизвестный предмет";
+-    if (this.phase !== "freeze" || !p.alive) return "Закупка только во время подготовки";
+-    const origin=this.map.spawns[p.team===this.attackTeam?"T":"CT"];
+-    if (Math.abs(p.z-origin[1]) > 4 || Math.abs(p.x-origin[0]) > 9)
+-      return "Нужна зона закупки";
+-    const e=this.roundEvent,price=Math.round(offer.price*e.price);
+-    if(e.guns && Object.hasOwn(WEAPONS,item))return "В этом ивенте оружие уже выдано";
+-    if(e.noArmor && ["armor","helmet"].includes(item))return "В этом ивенте нет брони";
+-    if(e.noUtility && validUtility(item))return "В этом ивенте нет гранат";
+-    if (p.money < price) return "Недостаточно денег";
+-    if (item === "kit" && (p.team === this.attackTeam || p.kit))
+-      return "Набор доступен только защите, один на игрока";
+-    if (item === "armor" && p.armor === 100) return "Броня уже полная";
+-    if (item === "helmet" && (!p.armor || p.helmet)) return "Нужен бронежилет без шлема";
+-    if (offer.side && offer.side !== (p.team === this.attackTeam ? "T" : "CT")) return "Оружие недоступно этой стороне";
++    const error=purchaseError(p,item,{phase:this.phase,roundEvent:this.roundEvent,map:this.map,attackTeam:this.attackTeam});
++    if(error)return error;
++    const offer=SHOP[item],e=this.roundEvent,price=Math.round(offer.price*e.price);
+     if (Object.hasOwn(WEAPONS,item)) {
+       if (p.guns[item]) return "Оружие уже есть";
+       const w = WEAPONS[item];
+@@ -421,6 +413,7 @@
+       p.reload = now + w.reload * 1000 * this.roundEvent.reload;
+   }
+   input(p, m, now) {
++    if(!p.alive)return;
+     const f = (n) => (Number.isFinite(n) ? clamp(n, -1, 1) : 0);
+     const pressed = !!m.fire || (!!m.altFire && (!!p.utility || WEAPONS[p.weapon]?.melee));
+     if (pressed && !p.triggerHeld) {
+@@ -450,7 +443,7 @@
+     p.shotTime = Number.isFinite(m.shotTime) ? clamp(m.shotTime,now-200,now) : now;
+     p.scoped = !!m.scoped && !!WEAPONS[p.weapon]?.scope;
+     if (Number.isFinite(m.yaw)) p.yaw = m.yaw % (Math.PI * 2);
+-    if (Number.isFinite(m.pitch)) p.pitch = clamp(m.pitch, -1.4, 1.4);
++    if (Number.isFinite(m.pitch)) p.pitch = clamp(m.pitch, -Math.PI/2+.01, Math.PI/2-.01);
+     if (
+       typeof m.weapon === "string" &&
+       Object.hasOwn(p.guns, m.weapon) &&
+@@ -952,6 +945,8 @@
+         grenades: p.grenades,
+         utility: p.utility,
+         flash: p.flash,
++        scoped: !!p.scoped,
++        disconnected: !!p.disconnected,
+         ammo: p.guns[p.weapon]?.ammo || 0,
+         reserve: p.guns[p.weapon]?.reserve || 0,
+         reload: p.reload,
+--- a/p2p.mjs
++++ b/p2p.mjs
+@@ -1,3 +1,4 @@
++import {createPeerDiscovery} from "./peer-discovery.mjs";
+ import tls from "node:tls";
+ import { createHash, randomUUID } from "node:crypto";
+ import { readFile, mkdir, writeFile, rename } from "node:fs/promises";
+@@ -39,6 +40,7 @@
+   );
+   for (const list of Object.values(data.messages))
+     for (const m of list) if (m.delivery === "sending") m.delivery = "unconfirmed";
++  let discovery=null,discoveryError="";
+   let listener = null,
+     port = null,
+     closing = false,
+@@ -208,9 +210,13 @@
+     }
+     listener = server;
+     port = server.address().port;
++    try{discovery=await createPeerDiscovery({identity:()=>({id:myId,name:data.name,port})});discoveryError='';}
++    catch(e){discoveryError='LAN-поиск недоступен: '+(e.code||e.message);}
++
+     return snapshot();
+   }
+   async function close() {
++    discovery?.close();discovery=null;
+     const server = listener;
+     listener = null;
+     port = null;
+@@ -271,6 +277,8 @@
+     return {
+       id: myId,
+       name: data.name,
++      nearby: [],discoveryError,
++      ...discovery?.snapshot(),
+       listening: !!listener,
+       port,
+       invites: [...new Set(addresses)].map((host) => ({
+@@ -293,6 +301,11 @@
+     try {
+       if (!args || typeof args !== "object") throw Error("Некорректные параметры");
+       switch (command) {
++        case "scan":
++          if(!listener)await open(args.port??3090);
++          discovery?.announce();
++          await new Promise(resolve=>setTimeout(resolve,1200));
++          break;
+         case "status":
+           break;
+         case "open":
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "voidline-arena",
+-  "version": "0.10.1",
++  "version": "1.0.0",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "voidline-arena",
+-      "version": "0.10.1",
++      "version": "1.0.0",
+       "license": "MIT",
+       "dependencies": {
+         "selfsigned": "^2.4.1",
+--- a/package.json
++++ b/package.json
+@@ -1,8 +1,8 @@
+ {
+   "name": "voidline-arena",
+-  "version": "0.10.1",
++  "version": "1.0.0",
+   "private": true,
+-  "description": "Original Electron tactical FPS prototype with authoritative LAN multiplayer",
++  "description": "VOIDLINE tactical FPS — stabilization release",
+   "main": "electron.cjs",
+   "type": "module",
+   "scripts": {
+@@ -37,7 +37,10 @@
+       "settings-store.mjs",
+       "display-controller.mjs",
+       "build/native/**/*",
+-      "net-session.mjs"
++      "net-session.mjs",
++      "peer-discovery.mjs",
++      "RELEASE-1.0-RU.md",
++      "QA-1.0-RU.md"
+     ],
+     "win": {
+       "target": [
+--- a/peer-discovery.mjs
++++ b/peer-discovery.mjs
+@@ -0,0 +1,31 @@
++// Opt-in LAN discovery only. Advertisements are untrusted until TLS certificate pinning.
++import dgram from 'node:dgram';
++import {networkInterfaces} from 'node:os';
++export const DISCOVERY_PORT=3091;
++const GROUP='239.255.86.76';
++export function parseAdvertisement(raw,host,myId){
++ if(raw.length>2048 || !/^(\d{1,3}\.){3}\d{1,3}$/.test(host))return null;
++ let m;try{m=JSON.parse(raw.toString());}catch{return null;}
++ if(!m||typeof m!=='object'||m.protocol!=='VOIDLINE-LAN-1'||m.id===myId||!/^[a-f0-9]{64}$/.test(m.id)||typeof m.name!=='string'||!Number.isInteger(m.port)||m.port<1024||m.port>65535)return null;
++ const name=m.name.replace(/[^\p{L}\p{N}_ -]/gu,'').trim().slice(0,24)||'OPERATOR';
++ return {id:m.id,name,host,port:m.port,code:'VLF1.'+Buffer.from(JSON.stringify({v:1,id:m.id,name,host,port:m.port})).toString('base64url')};
++}
++export async function createPeerDiscovery({identity,port=DISCOVERY_PORT,group=GROUP,intervalMs=3000}){
++ const socket=dgram.createSocket({type:'udp4',reuseAddr:true}),peers=new Map();
++ let error='',timer,closed=false;
++ socket.on('error',e=>{error='Обнаружение LAN: '+(e.code||e.message);});
++ socket.on('message',(raw,rinfo)=>{
++  const peer=parseAdvertisement(raw,rinfo.address,identity().id);
++  if(peer){if(peers.size>=64&&!peers.has(peer.id))return;peers.set(peer.id,{...peer,seenAt:Date.now()});}
++ });
++ try{
++  await new Promise((resolve,reject)=>{socket.once('error',reject);socket.bind(port,'0.0.0.0',()=>{socket.removeListener('error',reject);resolve();});});
++  socket.setMulticastTTL(1);socket.setMulticastLoopback(true);
++  let memberships=0;
++  for(const list of Object.values(networkInterfaces()))for(const iface of list||[])if(iface.family==='IPv4'&&!iface.internal){try{socket.addMembership(group,iface.address);memberships++;}catch{}}
++  if(!memberships)socket.addMembership(group);
++ }catch(e){try{socket.close();}catch{}throw e;}
++ function announce(){if(closed)return;const m=identity();if(!m.port)return;const raw=Buffer.from(JSON.stringify({protocol:'VOIDLINE-LAN-1',id:m.id,name:m.name,port:m.port}));socket.send(raw,port,group,e=>{if(e)error='Обнаружение LAN: '+e.code;});}
++ announce();timer=setInterval(announce,intervalMs);timer.unref();
++ return {announce,snapshot(){const now=Date.now();for(const [id,p] of peers)if(now-p.seenAt>12000)peers.delete(id);return {nearby:[...peers.values()],discoveryError:error};},close(){if(closed)return;closed=true;clearInterval(timer);socket.close();peers.clear();}};
++}
+--- a/preload.cjs
++++ b/preload.cjs
+@@ -21,6 +21,7 @@
+ );
+ 
+ const socialCommands = new Set([
++  "scan",
+   "status",
+   "open",
+   "close",
+--- a/public/aim.mjs
++++ b/public/aim.mjs
+@@ -0,0 +1,4 @@
++export function aimDelta(yaw,pitch,dx,dy,sensitivity=1,invertY=false){
++ const tau=Math.PI*2,limit=Math.PI/2-.01;
++ return {yaw:((yaw-dx*.002*sensitivity)%tau+tau)%tau,pitch:Math.max(-limit,Math.min(limit,pitch-dy*.002*sensitivity*(invertY?-1:1)))};
++}
+--- a/public/crosshair.mjs
++++ b/public/crosshair.mjs
+@@ -3,6 +3,6 @@
+  const size=s.crossSize,gap=s.crossGap,t=s.crossThickness;
+  el.style.opacity=s.crossOpacity;el.style.filter=s.crossOutline?'drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000) drop-shadow(0 1px 0 #000) drop-shadow(0 -1px 0 #000)':'none';
+  el.style.setProperty('--gap',gap+'px');
+- [...el.querySelectorAll('i')].forEach((n,i)=>{n.style.background=s.crossColor;n.style.width=(i<2?t:size)+'px';n.style.height=(i<2?size:t)+'px';n.style.left=i<2?-t/2+'px':i===2?`calc(-${size}px - var(--gap))`:'var(--gap)';n.style.top=i>=2?-t/2+'px':i===0?`calc(-${size}px - var(--gap))`:'var(--gap)';});
++ [...el.querySelectorAll('i')].forEach((n,i)=>{n.style.position='absolute';n.style.display='block';n.style.background=s.crossColor;n.style.width=(i<2?t:size)+'px';n.style.height=(i<2?size:t)+'px';n.style.left=i<2?-t/2+'px':i===2?`calc(-${size}px - var(--gap))`:'var(--gap)';n.style.top=i>=2?-t/2+'px':i===0?`calc(-${size}px - var(--gap))`:'var(--gap)';});
+  const dot=el.querySelector('b');if(dot){dot.hidden=!s.crossDot;Object.assign(dot.style,{position:'absolute',width:t+'px',height:t+'px',left:-t/2+'px',top:-t/2+'px',background:s.crossColor});}
+ }
+--- a/public/diagnostics.mjs
++++ b/public/diagnostics.mjs
+@@ -8,7 +8,7 @@
+   window.voidlineDiagnostics?.record(entry)?.catch(()=>{});
+  };
+  async function saveReport(){
+-  const text=JSON.stringify({version:'0.10.1',info:getInfo(),events:records},null,2),a=document.createElement('a');
++  const text=JSON.stringify({version:'1.0.0',info:getInfo(),events:records},null,2),a=document.createElement('a');
+   const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));a.href=url;a.download='VOIDLINE-diagnostics.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  async function safeReload(){
+--- a/public/game.mjs
++++ b/public/game.mjs
+@@ -1,3 +1,6 @@
++import {aimDelta} from "./aim.mjs";
++import {purchaseError} from "./purchase.mjs";
++import {sideLabel,spectatorTarget,flashOpacity} from "./match-ui.mjs";
+ import {createPointerCapture} from "./pointer-capture.mjs";
+ import {isEditableTarget,preventPageKey,viewportLayout} from "./input-policy.mjs";
+ import {cycleSlot} from "./slot-cycle.mjs";
+@@ -70,7 +73,7 @@
+ const postFX = createPostFX(renderer);
+ let prefs = normalizeSettings(null),
+   inventoryUI;
+-const diagnostics=setupDiagnostics(()=>({version:'0.10.1',platform:navigator.platform,userAgent:navigator.userAgent,graphics:{shadows:prefs.shadows,renderScale:prefs.renderScale,aa:prefs.aa},gpu:{...renderer.info.memory}}));
++const diagnostics=setupDiagnostics(()=>({version:'1.0.0',platform:navigator.platform,userAgent:navigator.userAgent,graphics:{shadows:prefs.shadows,renderScale:prefs.renderScale,aa:prefs.aa},gpu:{...renderer.info.memory}}));
+ const down = (name) => actionDown(keys, prefs, name);
+ const scene = new THREE.Scene();
+ scene.background = new THREE.Color("#a7d5e5");
+@@ -197,9 +200,14 @@
+  $("shopName").textContent=SHOP[id].name;
+  const w=WEAPONS[id],e=state?.roundEvent||{},price=Math.round(SHOP[id].price*(e.price??1));
+  $("shopStats").textContent=w?`$${price} · ${w.mag} / ${w.reserve} · Урон ${Math.round(w.damage*(e.damage??1))} · ${Math.round(60/(w.delay*(e.cadence??1)))} выстр/мин · Перезарядка ${(w.reload*(e.reload??1)).toFixed(2)} с` : "Снаряжение · $"+price;
++ if(me&&state){const reason=purchaseError(me,id,{phase:state.phase,roundEvent:state.roundEvent,map:currentMap,attackTeam:state.attackTeam});if(reason)$('shopStats').textContent+=' · '+reason;}
+  shopPreview ||= createShopPreview($("shopCanvas"));shopPreview.show(id);
+ }
+ const mobile = navigator.maxTouchPoints>0 && matchMedia("(pointer:coarse)").matches;
++let spectateId=null,spectateCameraId=null;
++const spectatePos=new THREE.Vector3();
++function pov(){return spectatorTarget(state?.players||[],me,spectateId)||me;}
++function changeSpectator(step){const target=spectatorTarget(state?.players||[],me,spectateId,step);spectateId=target?.id||null;lastEquipped=null;if(state&&me)hud();}
+ let scoped=false, touchMove={forward:0,side:0}, reconnectTimer=null,reconnectAttempts=0,joinError="";
+ const resumeTokens=new Map();
+ const utilityViews = Object.fromEntries(
+@@ -353,7 +361,8 @@
+   }
+ }
+ function makePlayer(p) {
+-  const root = buildOperator(p.team);
++  const root = buildOperator(p.team===state?.attackTeam?1:0);
++  root.userData.side=p.team===state?.attackTeam?1:0;
+   const sidearm = buildWeapon("pistol");
+   sidearm.position.copy(root.userData.weapon.position);
+   sidearm.rotation.copy(root.userData.weapon.rotation);
+@@ -384,28 +393,41 @@
+ }
+ 
+ const utilityFX = createUtilityFX(scene, sound);
++function shotOrigin(e,local){
++ if(local){
++  const w=getView(e.weapon).userData.weapon;
++  if(w?.userData.muzzle){
++   gun.updateMatrixWorld(true);camera.updateMatrixWorld(true);gunCam.updateMatrixWorld(true);
++   const muzzle=w.localToWorld(w.userData.muzzle.clone()),ndc=muzzle.clone().project(gunCam);
++   return new THREE.Vector3(ndc.x,ndc.y,.5).unproject(camera).sub(camera.position).normalize().multiplyScalar(muzzle.length()).add(camera.position);
++  }
++ }
++ const m=models.get(e.id),w=m&&(e.weapon==='rifle'?m.root.userData.weapon:e.weapon==='pistol'?m.root.userData.sidearm:m.extraWeapons?.[e.weapon]);
++ if(w?.userData.muzzle){m.root.updateMatrixWorld(true);return w.localToWorld(w.userData.muzzle.clone());}
++ return new THREE.Vector3(...e.from);
++}
+ function event(e) {
+   utilityFX.event(e);
+-  if (e.type === "throw" && e.id === myId) {
++  if (e.type === "throw" && e.id === (spectateId||myId)) {
+     throwView = { kind: e.kind, until: clock + 0.4 };
+     utilityViews[e.kind].userData.animations.play();
+   }
+   if (e.type === "shot" && e.id !== myId && models.has(e.id))
+     models.get(e.id).shotUntil = clock + 0.18;
+   if(e.type === "melee") {
+-    if(e.id===myId){getView(me?.weapon).userData.animations.play(e.heavy?"heavy":"fire");sound("throw");}
++    if(e.id===(spectateId||myId)){getView(pov()?.weapon).userData.animations.play(e.heavy?"heavy":"fire");sound("throw");}
+     else if(models.has(e.id))models.get(e.id).shotUntil=clock+.3;
+   }
+   if (e.type === "shot") {
+-    const local = e.id === myId;
++    const local = e.id === (spectateId||myId);
+     if (local) {
+-      getView(me?.weapon).userData.animations.play("fire");
++      getView(pov()?.weapon).userData.animations.play("fire");
+       kick = 0.035;
+       flashTime = 0.045;
+       sound("shot");
+     } else sound("shot", true);
+     const g = new THREE.BufferGeometry().setFromPoints([
+-        new THREE.Vector3(...e.from),
++        shotOrigin(e,local),
+         new THREE.Vector3(...e.to),
+       ]),
+       line = new THREE.Line(
+@@ -626,6 +648,7 @@
+     }
+     if (m.type === "state") {
+       if (state && state.round !== m.round) {
++        resetGameControls();
+         cameraReady = false;
+         prediction = { vx: 0, vz: 0 };
+       }
+@@ -633,6 +656,7 @@
+       state = m;
+       netOffset = m.serverTime - Date.now();
+       me = m.players.find((p) => p.id === myId);
++      spectateId=spectatorTarget(m.players,me,spectateId)?.id||null;
+       if (me) {
+         if (!cameraReady) {
+           yaw = me.yaw;
+@@ -783,19 +807,17 @@
+ document.addEventListener("wheel",e=>{if(e.ctrlKey||e.metaKey)e.preventDefault();},{capture:true,passive:false});
+ document.addEventListener("mousemove", (e) => {
+   if(mobile)return;
+-  if (hasGameControl()) {
++  if (hasGameControl() && me?.alive) {
+     const sensitivity=prefs.sensitivity*(scoped && WEAPONS[me?.weapon]?.scope ? prefs.scopeSensitivity : 1);
+-    yaw -= e.movementX * 0.002 * sensitivity;
+-    pitch = clamp(
+-      pitch -
+-        e.movementY * 0.002 * sensitivity * (prefs.invertY ? -1 : 1),
+-      -1.4,
+-      1.4,
+-    );
++    const aim=aimDelta(yaw,pitch,e.movementX,e.movementY,sensitivity,prefs.invertY);
++    yaw=aim.yaw;pitch=aim.pitch;
+   }
+ });
+ document.addEventListener("keydown", (e) => {
+   if (!active || settingsUI.isOpen() || isEditableTarget(e.target)) return;
++  if(!me?.alive&&hasGameControl()&&['ArrowLeft','ArrowRight'].includes(e.code)){
++    e.preventDefault();changeSpectator(e.code==='ArrowLeft'?-1:1);return;
++  }
+   if(e.code==="Escape" && hasGameControl()){
+     e.preventDefault();releaseGameControls();return;
+   }
+@@ -859,6 +881,7 @@
+ document.addEventListener("visibilitychange",()=>{if(document.hidden&&mobile)releaseGameControls();});
+ document.addEventListener("mousedown", (e) => {
+   if(mobile)return;
++  if(hasGameControl()&&!me?.alive){if(e.button===0||e.button===2){changeSpectator(e.button===0?1:-1);return;}}
+   if (hasGameControl() && e.button === 0) mouseFire = true;
+   if (hasGameControl() && e.button === 2) { if(WEAPONS[me?.weapon]?.scope && !me.utility) scoped=!scoped; else mouseAlt=true; }
+   sendInput();
+@@ -908,22 +931,10 @@
+   for (const button of $("buyItems").querySelectorAll("button[data-item]")) {
+     const item = button.dataset.item,e=state.roundEvent||{},price=Math.round(SHOP[item].price*(e.price??1));
+     button.querySelector("strong").textContent="$"+price;
+-    button.disabled =
+-      state.phase !== "freeze" ||
+-      !me.alive ||
+-      me.money < price ||
+-      (e.guns && !!WEAPONS[item]) ||
+-      (e.noArmor && ["armor","helmet"].includes(item)) ||
+-      (e.noUtility && validUtility(item)) ||
+-      (SHOP[item].side && SHOP[item].side !== (me.team===state.attackTeam?"T":"CT")) ||
+-      (item === "kit" && (me.team === state.attackTeam || me.kit)) ||
+-      (item === "armor" && me.armor === 100) ||
+-      (item === "helmet" && (!me.armor || me.helmet)) ||
+-      (item === "ammo" &&
+-        (!me.weapon || me.reserve >= WEAPONS[me.weapon].reserve)) ||
+-      (me.inventory || []).includes(item) ||
+-      (validUtility(item) &&
+-        (utilityCount(me) >= 4 || me.grenades[item] >= UTILITY[item].max));
++    const reason=purchaseError(me,item,{phase:state.phase,roundEvent:e,map:currentMap,attackTeam:state.attackTeam});
++    button.disabled=!!reason;
++    button.title=reason||'Купить за $'+price;
++    button.querySelector('.buyReason').textContent=reason||'Доступно';
+   }
+   if(!$("buyMenu").hidden)showShopModel(shopItem);
+ }
+@@ -934,7 +945,7 @@
+  const h=document.createElement("h3");h.textContent=label;col.append(h);
+  for(const [id,item] of Object.entries(SHOP)){
+   const cat=item.category || (validUtility(id)?"grenades":"equipment"); if(cat!==key)continue;
+-  const b=document.createElement("button");b.dataset.item=id;b.innerHTML=`<span>${item.name}</span>${weaponSilhouette(id)}<strong>$${item.price}</strong>`;
++  const b=document.createElement("button");b.dataset.item=id;b.innerHTML=`<span>${item.name}</span>${weaponSilhouette(id)}<strong>$${item.price}</strong><small class="buyReason"></small>`;
+   b.onclick=()=>{if(connected)socket.send(JSON.stringify({type:"buy",item:id}));};
+   b.onpointerenter=b.onfocus=()=>showShopModel(id);col.append(b);
+  }$("buyItems").append(col);
+@@ -943,9 +954,11 @@
+   if (!state) return;
+   for (const p of state.players) {
+     if (p.id === myId) continue;
++    const side=p.team===state.attackTeam?1:0;
++    if(models.has(p.id)&&models.get(p.id).root.userData.side!==side){disposeOwnedTree(models.get(p.id).root);models.delete(p.id);}
+     if (!models.has(p.id)) models.set(p.id, makePlayer(p));
+     const m = models.get(p.id);
+-    m.root.visible = p.alive;
++    m.root.visible = p.alive && p.id!==spectateId;
+     applyWeaponSkin(m.root.userData.weapon, p.skins?.rifle || "standard");
+     applyWeaponSkin(m.root.userData.sidearm, p.skins?.pistol || "standard");
+     for (const [k, v] of Object.entries(m.root.userData.utilities))
+@@ -969,53 +982,54 @@
+ }
+ function hud() {
+   if (!me) return;
++  const actor=pov();
+   document.querySelector('.topLeft .eyebrow').textContent=currentMap.name+' / '+currentMap.subtitle.split(' · ')[0];
+   $("sideA").textContent=state.attackTeam===0?"Т":"КТ";$("sideB").textContent=state.attackTeam===1?"Т":"КТ";
+   $("scoreA").textContent = state.score[0];
+   $("scoreB").textContent = state.score[1];
+   $("round").textContent = `РАУНД ${String(state.round).padStart(2, "0")}`;
+-  $("hp").textContent = me.hp;
+-  $("hpBar").style.width = Math.min(100,100*me.hp/(me.maxHp||100)) + "%";
+-  $("ammo").textContent = WEAPONS[me.weapon]?.melee?"∞":me.ammo;
+-  $("reserve").textContent = WEAPONS[me.weapon]?.melee?"НОЖ":"/ " + me.reserve;
+-  if(me.weapon) applyWeaponSkin(getView(me.weapon).userData.weapon,me.skins?.[me.weapon]||"standard");
++  $("hp").textContent = actor.hp;
++  $("hpBar").style.width = Math.min(100,100*actor.hp/(actor.maxHp||100)) + "%";
++  $("ammo").textContent = WEAPONS[actor.weapon]?.melee?"∞":actor.ammo;
++  $("reserve").textContent = WEAPONS[actor.weapon]?.melee?"НОЖ":"/ " + actor.reserve;
++  if(actor.weapon) applyWeaponSkin(getView(actor.weapon).userData.weapon,actor.skins?.[actor.weapon]||"standard");
+   $("eventBanner").textContent=state.mode==="events" ? "РАНДОМНЫЕ ИВЕНТЫ · "+state.roundEvent.name+" — "+state.roundEvent.description : "";
+   const eventRules=state.roundEvent||{};
+   scene.fog.density = eventRules.fog ?? .009;
+   scene.background.set(eventRules.sky||currentMap.theme.sky);scene.fog.color.set(eventRules.fogColor||currentMap.theme.fog);sun.color.set(eventRules.sun||currentMap.theme.sun);
+-  $("weaponName").textContent = me.utility
+-    ? UTILITY[me.utility].name
+-    : WEAPONS[me.weapon]?.name || "БЕЗ ОРУЖИЯ";
+-  if (me.utility) {
+-    $("ammo").textContent = me.grenades[me.utility];
++  $("weaponName").textContent = actor.utility
++    ? UTILITY[actor.utility].name
++    : WEAPONS[actor.weapon]?.name || "БЕЗ ОРУЖИЯ";
++  if (actor.utility) {
++    $("ammo").textContent = actor.grenades[actor.utility];
+     $("reserve").textContent = " / ЛКМ далеко · ПКМ близко";
+   }
+-  $("utilityInventory").textContent = Object.entries(me.grenades || {})
++  $("utilityInventory").textContent = Object.entries(actor.grenades || {})
+     .map(([k, n], i) => `${i + 4} ${k.toUpperCase()} ×${n}`)
+     .join("  ·  ");
+-  $("equippedSkin").textContent = me.utility
++  $("equippedSkin").textContent = actor.utility
+     ? "ГРАНАТА · ЛКМ / ПКМ"
+-    : me.weapon
+-      ? "РАСКРАСКА · " + (SKINS[me.skins?.[me.weapon]]?.name || "Factory")
++    : actor.weapon
++      ? "РАСКРАСКА · " + (SKINS[actor.skins?.[actor.weapon]]?.name || "Factory")
+       : "";
+-  applyWeaponSkin(rifleView.userData.weapon, me.skins?.rifle || "standard");
+-  applyWeaponSkin(pistolView.userData.weapon, me.skins?.pistol || "standard");
+-  $("reloadText").textContent = me.reload
++  applyWeaponSkin(rifleView.userData.weapon, actor.skins?.rifle || "standard");
++  applyWeaponSkin(pistolView.userData.weapon, actor.skins?.pistol || "standard");
++  $("reloadText").textContent = actor.reload
+     ? "ПЕРЕЗАРЯДКА…"
+-    : (me.inventory || [])
++    : (actor.inventory || [])
+         .filter(w=>weaponSlot(w)!=="knife"||w===prefs.knifeModel)
+         .map((w) => (weaponSlot(w)==="primary"?"1 ":weaponSlot(w)==="knife"?"3 ":"2 ")+WEAPONS[w].name)
+         .join("  ·  ");
+   $("equipment").textContent =
+-    `$${me.money} · БРОНЯ ${me.armor}${me.helmet ? " + ШЛЕМ" : ""}${me.kit ? " · НАБОР" : ""}`;
++    `$${me.money} · БРОНЯ ${actor.armor}${actor.helmet ? " + ШЛЕМ" : ""}${actor.kit ? " · НАБОР" : ""}`;
+   $("role").textContent =
+-    me.team === state.attackTeam
++    actor.team === state.attackTeam
+       ? "АТАКА · УСТАНОВИ БОМБУ НА A / B"
+       : "ЗАЩИТА · НЕ ДАЙ УСТАНОВИТЬ БОМБУ";
+   renderShop();
+   if (state.phase !== "freeze" && !$("buyMenu").hidden) closeShop(false);
+   $("teamName").textContent =
+-    (me.team === 0 ? "SPECTRE" : "EMBER") + " / " + me.name;
++    (spectateId?"НАБЛЮДЕНИЕ · ":sideLabel(actor.team,state.attackTeam)+" / ")+actor.name;
+   const rows = $("rows");
+   rows.replaceChildren();
+   const header = document.createElement("div");
+@@ -1033,7 +1047,7 @@
+     row.className = "row" + (p.id === myId ? " you" : "");
+     for (const t of [
+       p.name + (p.bot ? " [AI]" : "") + (!p.alive ? " †" : ""),
+-      p.team === 0 ? "SPECTRE" : "EMBER",
++      sideLabel(p.team,state.attackTeam),
+       p.kills,
+       p.deaths,
+     ]) {
+@@ -1111,19 +1125,10 @@
+   hitTime -= dt;
+   damageTime -= dt;
+   if (active && state && me) {
++    const actor=pov();
++    const viewScoped=spectateId?!!actor.scoped:scoped;
+     const now = Date.now() + netOffset,
+-      flashAlpha =
+-        me.flash && now < me.flash.until
+-          ? me.flash.peak *
+-            Math.pow(
+-              clamp(
+-                (me.flash.until - now) / (me.flash.until - me.flash.start),
+-                0,
+-                1,
+-              ),
+-              0.55,
+-            )
+-          : 0;
++      flashAlpha = flashOpacity(actor?.flash,now);
+     $("flashBlind").style.opacity = flashAlpha;
+     $("blindLabel").hidden = flashAlpha < 0.08;
+     utilityFX.update(clock, dt, now, yaw);
+@@ -1143,21 +1148,21 @@
+       sub = "";
+     if (state.phase === "freeze") {
+       title = "ЗАКУПКА · B";
+-      sub = `${me.team === 0 ? "SPECTRE" : "EMBER"} / НАЧАЛО ЧЕРЕЗ ${left}`;
++      sub = `${sideLabel(me.team,state.attackTeam)} / НАЧАЛО ЧЕРЕЗ ${left}`;
+     } else if (state.phase === "end" || state.phase === "match") {
+       const alive = [0, 0];
+       state.players.forEach((p) => {
+         if (p.alive) alive[p.team] += p.hp;
+       });
+       let winner = state.roundWinner;
+-      title = (winner === 0 ? "SPECTRE" : "EMBER") + " — ПОБЕДА";
++      title = sideLabel(winner,state.attackTeam) + " — ПОБЕДА";
+       sub =
+         state.phase === "match"
+           ? "МАТЧ ЗАВЕРШЁН · ESC → НОВЫЙ МАТЧ ИЛИ МЕНЮ"
+           : "СЛЕДУЮЩИЙ РАУНД ЧЕРЕЗ " + left;
+     } else if (!me.alive) {
+       title = "ТЫ ВЫБЫЛ";
+-      sub = "ВОЗВРАЩЕНИЕ В СЛЕДУЮЩЕМ РАУНДЕ";
++      sub = spectateId ? "НАБЛЮДЕНИЕ: "+actor.name+" · ← / → ИЛИ ЛКМ / ПКМ — СОЮЗНИК" : "НЕТ ЖИВЫХ СОЮЗНИКОВ · СЛЕДУЮЩИЙ РАУНД";
+     }
+     $("announceTitle").textContent = title;
+     $("announceSub").textContent = sub;
+@@ -1261,14 +1266,21 @@
+     if (Math.hypot(viewPos.x - me.x, viewPos.z - me.z) > 3)
+       viewPos.set(me.x, me.y, me.z);
+     camera.position.copy(viewPos);
++    if(spectateId){
++      if(spectateCameraId!==spectateId)spectatePos.set(actor.x,actor.y,actor.z);
++      spectatePos.lerp(new THREE.Vector3(actor.x,actor.y,actor.z),1-Math.exp(-dt*24));
++      camera.position.copy(spectatePos);
++    }
++    spectateCameraId=spectateId;
++
+     camera.rotation.set(
+-      pitch + (me.recoil?.pitch || 0) + kick * 0.15,
+-      yaw + (me.recoil?.yaw || 0),
++      (spectateId?actor.pitch:pitch) + (actor.recoil?.pitch || 0) + kick * 0.15,
++      (spectateId?actor.yaw:yaw) + (actor.recoil?.yaw || 0),
+       Math.sin(clock * 9) * 0.001 * Math.abs(f),
+     );
+     camera.fov = THREE.MathUtils.damp(
+       camera.fov,
+-      scoped && WEAPONS[me.weapon]?.scope ? 24 : down("slow") ? prefs.fov - 4 : prefs.fov,
++      viewScoped && WEAPONS[actor.weapon]?.scope ? 24 : down("slow") ? prefs.fov - 4 : prefs.fov,
+       8,
+       dt,
+     );
+@@ -1277,7 +1289,7 @@
+       lastSent = time;
+       sendInput();
+     }
+-    const sway = Math.abs(f) + Math.abs(s);
++    const sway = spectateId?Math.min(1,Math.hypot(actor.vx||0,actor.vz||0)/5.2):Math.abs(f)+Math.abs(s);
+     const handSign = prefs.hand === "left" ? -1 : 1;
+     gun.position.set(
+       handSign * (prefs.handX + Math.sin(clock * 8) * 0.004 * sway * prefs.bob),
+@@ -1287,50 +1299,51 @@
+     gun.rotation.set(kick * 1.5, 0, 0);
+     gun.scale.set(handSign, 1, 1);
+     const shownUtility =
+-      me.utility ||
++      actor.utility ||
+       (throwView && clock < throwView.until ? throwView.kind : null);
+-    const equipped = shownUtility || me.weapon;
++    const equipped = shownUtility || actor.weapon;
+     if (equipped !== lastEquipped) {
+       scoped=false;
+       for (const view of Object.values(weaponViews)) {
+         for (const a of Object.values(view.userData.animations.actions))
+           a.stop();
+       }
+-      if (!me.utility)
+-        getView(me?.weapon).userData.animations.play("equip");
++      if (!actor.utility)
++        getView(actor?.weapon).userData.animations.play("equip");
+       lastEquipped = equipped;
+       wasReloading = false;
+     }
+-    if (me.reload && !wasReloading && !me.utility)
+-      getView(me?.weapon).userData.animations.play("reload");
+-    if (!me.reload && wasReloading)
++    if (actor.reload && !wasReloading && !actor.utility)
++      getView(actor?.weapon).userData.animations.play("reload");
++    if (!actor.reload && wasReloading)
+       for (const view of Object.values(weaponViews))
+         view.userData.animations.actions.reload?.stop();
+-    wasReloading = !!me.reload;
++    wasReloading = !!actor.reload;
+     for (const view of Object.values(weaponViews))
+       view.userData.animations.mixer.update(dt);
+-    for(const [id,v] of Object.entries(weaponViews)) v.visible = id===me.weapon && !shownUtility;
+-    if(me.weapon) getView(me.weapon).visible=!shownUtility;
++    for(const [id,v] of Object.entries(weaponViews)) v.visible = id===actor.weapon && !shownUtility;
++    if(actor.weapon) getView(actor.weapon).visible=!shownUtility;
+     for (const [k, v] of Object.entries(utilityViews)) {
+       v.visible = shownUtility === k;
+       v.userData.animations.update(dt);
+     }
+-    flash.position.copy(
+-      me.weapon === "pistol"
+-        ? new THREE.Vector3(0.22, -0.21, -0.75)
+-        : new THREE.Vector3(0.22, -0.21, -1.45),
+-    );
+-    const gap = prefs.crossGap + (prefs.crossDynamic ? (me.spread || 0.002) * 260 : 0);
++    if(actor.weapon&&!WEAPONS[actor.weapon]?.melee){
++      const w=getView(actor.weapon).userData.weapon;
++      gun.updateMatrixWorld(true);
++      flash.position.copy(gun.worldToLocal(w.localToWorld(w.userData.muzzle.clone())));
++    }
++    const gap = prefs.crossGap + (prefs.crossDynamic ? (actor.spread || 0.002) * 260 : 0);
+     $("crosshair").style.setProperty("--gap", gap + "px");
+-    flash.visible = flashTime > 0 && !!me.weapon && !WEAPONS[me.weapon]?.melee && !shownUtility;
++    flash.visible = flashTime > 0 && !!actor.weapon && !WEAPONS[actor.weapon]?.melee && !shownUtility;
+     flash.material.rotation = clock * 20;
+     $("hitmarker").style.opacity = hitTime > 0 ? 1 : 0;
+     $("damage").style.opacity = Math.max(0, damageTime) * 1.8;
+-    $("crosshair").hidden = !me.alive || (scoped && !!WEAPONS[me.weapon]?.scope);
+-    $("scopeOverlay").hidden = !me.alive || !scoped || !WEAPONS[me.weapon]?.scope;
++    $("crosshair").hidden = !actor.alive || (viewScoped && !!WEAPONS[actor.weapon]?.scope);
++    $("scopeOverlay").hidden = !actor.alive || !viewScoped || !WEAPONS[actor.weapon]?.scope;
+     radar();
+     for (const m of models.values()) {
+       const p = m.target;
++      m.root.visible=!!p?.alive&&p.id!==spectateId;
+       if (!p) continue;
+       const pos = m.root.position;
+       if (!m.initial) {
+@@ -1396,7 +1409,7 @@
+       renderer.render(weaponScene, gunCam);
+     } else renderer.render(lobby.scene, lobby.camera);
+   }
+-  if (active && me?.alive && !(scoped && WEAPONS[me.weapon]?.scope)) {
++  if (active && pov()?.alive && !((spectateId?pov().scoped:scoped) && WEAPONS[pov().weapon]?.scope)) {
+     renderer.autoClear = false;
+     renderer.clearDepth();
+     renderer.render(weaponScene, gunCam);
+@@ -1429,7 +1442,7 @@
+  const pad=$("movePad");pad.onpointerdown=e=>{moveId=e.pointerId;pad.setPointerCapture(e.pointerId);};
+  pad.onpointermove=e=>{if(e.pointerId!==moveId)return;const r=pad.getBoundingClientRect(),x=clamp((e.clientX-r.x-r.width/2)/45,-1,1),y=clamp((e.clientY-r.y-r.height/2)/45,-1,1);touchMove={side:x,forward:-y};pad.querySelector("i").style.transform=`translate(${x*32}px,${y*32}px)`;};
+  pad.onpointerup=pad.onpointercancel=e=>{moveId=null;reset();};
+- const look=$("lookPad");look.onpointerdown=e=>{lookId=e.pointerId;lookX=e.clientX;lookY=e.clientY;look.setPointerCapture(e.pointerId);};look.onpointermove=e=>{if(e.pointerId!==lookId||!locked)return;const sensitivity=prefs.sensitivity*(scoped && WEAPONS[me?.weapon]?.scope ? prefs.scopeSensitivity : 1);yaw-=(e.clientX-lookX)*.004*sensitivity;pitch=clamp(pitch-(e.clientY-lookY)*.004*sensitivity*(prefs.invertY?-1:1),-1.4,1.4);lookX=e.clientX;lookY=e.clientY;};look.onpointerup=look.onpointercancel=()=>{lookId=null;};
++ const look=$("lookPad");look.onpointerdown=e=>{lookId=e.pointerId;lookX=e.clientX;lookY=e.clientY;look.setPointerCapture(e.pointerId);};look.onpointermove=e=>{if(e.pointerId!==lookId||!locked||!me?.alive)return;const sensitivity=prefs.sensitivity*(scoped && WEAPONS[me?.weapon]?.scope ? prefs.scopeSensitivity : 1);yaw-=(e.clientX-lookX)*.004*sensitivity;pitch=clamp(pitch-(e.clientY-lookY)*.004*sensitivity*(prefs.invertY?-1:1),-Math.PI/2+.01,Math.PI/2-.01);lookX=e.clientX;lookY=e.clientY;};look.onpointerup=look.onpointercancel=()=>{lookId=null;};
+  for(const b of touch.querySelectorAll("button")){
+   b.onpointerdown=e=>{e.preventDefault();b.setPointerCapture(e.pointerId);const a=b.dataset.touch;
+    if(a==="fire")mouseFire=true;
+--- a/public/host-ui.mjs
++++ b/public/host-ui.mjs
+@@ -1,3 +1,4 @@
++import {sideLabel} from "./match-ui.mjs";
+ import {MAPS} from "./maps.mjs";
+ const $ = (id) => document.getElementById(id);
+ export function setupHostUI({ connect }) {
+@@ -43,7 +44,7 @@
+     }
+     $("copyAddress").disabled = !select.value;
+     $("rosterSummary").textContent =
+-      `SPECTRE ${status.players.filter((p) => p.team === 0).length}/5 · EMBER ${status.players.filter((p) => p.team === 1).length}/5`;
++      `${sideLabel(0,status.attackTeam)} ${status.players.filter((p) => p.team === 0).length}/5 · ${sideLabel(1,status.attackTeam)} ${status.players.filter((p) => p.team === 1).length}/5`;
+     const bots = status.players.filter((p) => p.bot),
+       host = $("botList");
+     const signature = JSON.stringify(bots);
+@@ -61,7 +62,7 @@
+         const label = document.createElement("span");
+         label.textContent = bot.name;
+         const team = document.createElement("small");
+-        team.textContent = bot.team === 0 ? "SPECTRE" : "EMBER";
++        team.textContent = sideLabel(bot.team,status.attackTeam);
+         team.className = bot.team === 0 ? "botCyan" : "botOrange";
+         const remove = document.createElement("button");
+         remove.textContent = "УБРАТЬ";
+@@ -73,6 +74,8 @@
+       }
+       host.dataset.signature = signature;
+     }
++    $("addSpectre").textContent="＋ "+sideLabel(0,status.attackTeam);
++    $("addEmber").textContent="＋ "+sideLabel(1,status.attackTeam);
+     $("addSpectre").disabled = busy || status.players.filter((p) => p.team === 0).length >= 5;
+     $("addEmber").disabled = busy || status.players.filter((p) => p.team === 1).length >= 5;
+     $("clearBots").disabled = busy || !bots.length;
+@@ -182,13 +185,13 @@
+     action(
+       "bot-add",
+       { team: 0 },
+-      "Бот SPECTRE добавлен. Во время боя он вступит со следующего раунда.",
++      "Бот добавлен. Во время боя он вступит со следующего раунда.",
+     );
+   $("addEmber").onclick = () =>
+     action(
+       "bot-add",
+       { team: 1 },
+-      "Бот EMBER добавлен. Во время боя он вступит со следующего раунда.",
++      "Бот добавлен. Во время боя он вступит со следующего раунда.",
+     );
+   $("clearBots").onclick = () =>
+     action("bot-clear", {}, "Все боты убраны. Автоматически добавляться они не будут.");
+--- a/public/index.html
++++ b/public/index.html
+@@ -3,7 +3,7 @@
+   <head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+-    <title>VOIDLINE — Input & Window Fix 0.10.1</title>
++    <title>VOIDLINE — Stabilization 1.0.0</title>
+     <link rel="icon" type="image/svg+xml" href="assets/voidline.svg" />
+     <link rel="stylesheet" href="style.css" />
+   </head>
+@@ -13,7 +13,7 @@
+     <main id="menu" class="lobbyMenu">
+       <header class="lobbyTop">
+         <a class="lobbyLogo" href="#" aria-label="VOIDLINE">V/</a
+-        ><span class="edition">VOIDLINE<br /><small>FIX / 0.10.1</small></span>
++        ><span class="edition">VOIDLINE<br /><small>FIX / 1.0.0</small></span>
+         <nav aria-label="Разделы игры">
+           <button data-pane="arsenal">АРСЕНАЛ</button
+           ><button data-pane="inventory">ИНВЕНТАРЬ</button
+@@ -106,7 +106,7 @@
+         </div>
+       </section>
+       <section class="playCard menuPane" id="pane-equipment" hidden>
+-        <div class="eyebrow">SPECTRE / FIELD OPERATOR</div>
++        <div class="eyebrow">КТ / FIELD OPERATOR</div>
+         <h2>СНАРЯЖЕНИЕ</h2>
+         <article class="arsenalItem">
+           <b>ОПЕРАТОР «КЕСТРЕЛ»</b>
+@@ -123,7 +123,7 @@
+       </section>
+       <div class="operatorBadge">
+         <span class="operatorEmblem">V/</span>
+-        <div><b>ОПЕРАТОР SPECTRE</b><span>НА ГОТОВЕ · TERMINAL</span></div>
++        <div><b>ОПЕРАТОР КТ</b><span>НА ГОТОВЕ · TERMINAL</span></div>
+       </div>
+       <aside class="friendRail">
+         <div class="railHeading">
+@@ -138,7 +138,7 @@
+         <p class="railFoot">P2P · TLS 1.3<br />Без центрального сервера</p>
+       </aside>
+       <footer class="lobbyFooter">
+-        <span>VOIDLINE / PRE-ALPHA 0.10.1</span
++        <span>VOIDLINE / 1.0.0</span
+         ><span>Оригинальные модели и окружение · LAN / VPN</span>
+       </footer>
+     </main>
+@@ -179,7 +179,7 @@
+       <div id="flashBlind"><span id="blindLabel" hidden>ОСЛЕПЛЕНИЕ</span></div>
+       <div class="bottomLeft">
+         <small id="utilityInventory"></small><small id="equipment"></small
+-        ><small id="teamName">SPECTRE / ОПЕРАТОР</small>
++        ><small id="teamName">КТ / ОПЕРАТОР</small>
+         <div class="health">
+           <span>+</span><b id="hp">100</b>
+           <div class="healthTrack"><i id="hpBar"></i></div>
+@@ -268,8 +268,8 @@
+             <span id="rosterSummary"></span>
+           </div>
+           <div class="botActions">
+-            <button id="addSpectre" class="secondary">＋ SPECTRE</button
+-            ><button id="addEmber" class="secondary">＋ EMBER</button
++            <button id="addSpectre" class="secondary">＋ Т</button
++            ><button id="addEmber" class="secondary">＋ КТ</button
+             ><button id="clearBots" class="secondary">УБРАТЬ ВСЕХ</button>
+           </div>
+           <div id="botList"></div>
+@@ -295,7 +295,7 @@
+         <p>8 карт · Bomb Operation · до 5 на 5</p>
+         <div class="createOptions">
+           <label
+-            >БОТЫ SPECTRE<select id="botsA">
++            >БОТЫ Т<select id="botsA">
+               <option value="0">0 ботов</option>
+               <option value="1" selected>1 бот + ты</option>
+               <option value="2">2 бота + ты</option>
+@@ -303,7 +303,7 @@
+               <option value="4">4 бота + ты</option>
+             </select></label
+           ><label
+-            >БОТЫ EMBER<select id="botsB">
++            >БОТЫ КТ<select id="botsB">
+               <option value="0">0 ботов</option>
+               <option value="1">1 бот</option>
+               <option value="2" selected>2 бота</option>
+--- a/public/match-ui.mjs
++++ b/public/match-ui.mjs
+@@ -0,0 +1,15 @@
++export const sideLabel=(team,attackTeam)=>team===attackTeam?'Т':'КТ';
++export function spectatorTarget(players,me,current,step=0){
++ if(!me||me.alive)return null;
++ const allies=players.filter(p=>p.id!==me.id&&p.team===me.team&&p.alive&&!p.disconnected);
++ if(!allies.length)return null;
++ const index=allies.findIndex(p=>p.id===current);
++ return allies[(Math.max(0,index)+step%allies.length+allies.length)%allies.length];
++}
++export function flashOpacity(flash,now){
++ if(!flash||now>=flash.until)return 0;
++ const duration=flash.until-flash.start;if(duration<=0)return 0;
++ const remaining=Math.min(1,Math.max(0,(flash.until-now)/duration));
++ // Hold full white briefly for a close, front-facing detonation, then fade.
++ return Math.min(1,flash.peak*1.8)*Math.min(1,remaining/0.65);
++}
+--- a/public/models.mjs
++++ b/public/models.mjs
+@@ -12,6 +12,15 @@
+ const material = (color, roughness = 0.7, metalness = 0) =>
+   new THREE.MeshStandardMaterial({ color, roughness, metalness });
+ let cached;
++const teamFabrics=new Map();
++function operatorFabrics(side){
++ if(!teamFabrics.has(side)){
++  const base=fabrics(), m={...base};
++  const colors=side===0?{cloth:"#476d9c",armor:"#24354f",tan:"#456b96",strap:"#273d54"}:{cloth:"#c6a275",armor:"#6d4d30",tan:"#b8874e",strap:"#74573c"};
++  for(const [key,color] of Object.entries(colors)){m[key]=base[key].clone();m[key].color.set(color);}
++  teamFabrics.set(side,m);
++ }return teamFabrics.get(side);
++}
+ function fabrics() {
+   if (cached) return cached;
+   const c = document.createElement("canvas");
+@@ -357,7 +366,7 @@
+   return g;
+ }
+ function buildOperatorSource(team = 0) {
+-  const m = fabrics(),
++  const m = operatorFabrics(team),
+     g = new THREE.Group(),
+     body = new THREE.Group();
+   g.add(body);
+@@ -466,6 +475,9 @@
+   tube(body, [-0.185, 1.67, -0.015], [-0.15, 1.59, -0.19], 0.008, m.black);
+   sphere(body, -0.13, 1.59, -0.2, 0.017, m.black);
+   tube(body, [-0.23, 1.42, 0.1], [-0.26, 1.94, 0.12], 0.004, m.black);
++  // Defense has a broad ballistic visor; attack has a wrapped scarf silhouette.
++  if(team===0) cube(body,0,1.71,-.192,.31,.115,.025,m.glass);
++  else {cube(body,0,1.54,.015,.31,.10,.27,m.tan);cube(body,.10,1.42,.16,.13,.20,.045,m.tan);}
+   const armStart = body.children.length;
+   const accent = ownedMaterial(material(team === 0 ? "#80aab0" : "#d7a571", 0.8));
+   for (const side of [-1, 1]) {
+@@ -687,9 +699,9 @@
+     if (node.isMesh)
+       atlasUV(
+         node.geometry,
+-        node.material === fabrics().cloth
++        node.material === operatorFabrics(team).cloth
+           ? 0
+-          : node.material === fabrics().armor
++          : node.material === operatorFabrics(team).armor
+             ? 4
+             : 2,
+       );
+--- a/public/navigation.mjs
++++ b/public/navigation.mjs
+@@ -1,6 +1,6 @@
+ import {blocked} from './shared.mjs';
+ // Shared BFS with segment checks. No hard-coded old 38x48 arena limits.
+-export function route(map,p,t){
++export function route(map,p,t,lane=0){
+  const step=2,key=(x,z)=>x+','+z, sx=Math.round(p.x/step),sz=Math.round(p.z/step);
+  const clear=(a,b,c,d)=>{const n=Math.ceil(Math.hypot(c-a,d-b)/.4);for(let i=0;i<=n;i++)if(blocked(a+(c-a)*i/Math.max(1,n),b+(d-b)*i/Math.max(1,n),.48,map.boxes))return false;return true;};
+  const queue=[[sx,sz]],seen=new Map([[key(sx,sz),null]]);let end=null,best=Infinity;
+@@ -8,7 +8,7 @@
+   const [x,z]=queue[n],k=key(x,z),dist=Math.hypot(x*step-t.x,z*step-t.z);
+   if(dist<best){best=dist;end=k;}
+   if(dist<2.2&&clear(x*step,z*step,t.x,t.z)){end=k;break;}
+-  for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]){
++  for(const [dx,dz] of (lane===1?[[-1,0],[0,-1],[0,1],[1,0]]:lane===2?[[0,-1],[0,1],[1,0],[-1,0]]:[[1,0],[-1,0],[0,1],[0,-1]])){
+    const a=x+dx,b=z+dz,k2=key(a,b);
+    if(Math.abs(a*step)>map.w/2-1||Math.abs(b*step)>map.d/2-1||seen.has(k2)||!clear(x*step,z*step,a*step,b*step))continue;
+    seen.set(k2,k);queue.push([a,b]);
+--- a/public/pointer-capture.mjs
++++ b/public/pointer-capture.mjs
+@@ -29,7 +29,8 @@
+       timer=win.setTimeout(()=>{if(!owns())failure('Мышь не захвачена. Нажми «Продолжить». Esc освобождает курсор.');},timeoutMs);
+       element.focus?.({preventScroll:true});
+       try {
+-        const result=element.requestPointerLock();
++        const attempt=element.requestPointerLock({unadjustedMovement:true});
++        const result=attempt?.then?attempt.catch(err=>{if(err?.name==='NotSupportedError' && enabled() && focused())return element.requestPointerLock();throw err;}):attempt;
+         // Older implementations return void; pointerlockchange/error completes them.
+         if(!result?.then)return Promise.resolve(false);
+         return result.then(()=>{if(disposed)return false;change();return locked();},err=>{if(!disposed)failure('Не удалось захватить мышь. Нажми «Продолжить», чтобы повторить. '+(err?.name||''));return false;});
+--- a/public/purchase.mjs
++++ b/public/purchase.mjs
+@@ -0,0 +1,27 @@
++import {SHOP,WEAPONS} from './shared.mjs';
++import {UTILITY,validUtility,utilityCount} from './utilities.mjs';
++export function purchaseError(p,item,{phase,roundEvent:e={},map,attackTeam}){
++ const offer=typeof item==='string'&&Object.hasOwn(SHOP,item)?SHOP[item]:null;
++ if(!offer)return 'Неизвестный предмет';
++ if(phase!=='freeze'||!p.alive)return 'Закупка только во время подготовки';
++ const origin=map.spawns[p.team===attackTeam?'T':'CT'];
++ if(Math.abs(p.z-origin[1])>4||Math.abs(p.x-origin[0])>9)return 'Нужна зона закупки';
++ if(e.guns&&Object.hasOwn(WEAPONS,item))return 'В этом ивенте оружие уже выдано';
++ if(e.noArmor&&['armor','helmet'].includes(item))return 'В этом ивенте нет брони';
++ if(e.noUtility&&validUtility(item))return 'В этом ивенте нет гранат';
++ if(offer.side&&offer.side!==(p.team===attackTeam?'T':'CT'))return 'Только для '+(offer.side==='T'?'Т · атаки':'КТ · защиты');
++ if(item==='kit'&&(p.team===attackTeam||p.kit))return 'Набор доступен только защите, один на игрока';
++ if(item==='armor'&&p.armor===100)return 'Броня уже полная';
++ if(item==='helmet'&&(!p.armor||p.helmet))return 'Нужен бронежилет без шлема';
++ const inventory=p.inventory||Object.keys(p.guns||{});
++ if(WEAPONS[item]&&inventory.includes(item))return 'Оружие уже есть';
++ if(item==='ammo'){
++  const w=WEAPONS[p.weapon],g=p.guns?.[p.weapon];
++  if(!w||w.melee||(!g&&!inventory.includes(p.weapon)))return 'Выбери огнестрельное оружие';
++  if((g?.reserve??p.reserve)>=w.reserve)return 'Резерв уже полный';
++ }
++ if(validUtility(item)&&(utilityCount(p)>=4||p.grenades[item]>=UTILITY[item].max))return 'Лимит: четыре гранаты, не более двух FLASH и одной каждого другого типа';
++ const price=Math.round(offer.price*(e.price??1));
++ if(p.money<price)return 'Недостаточно денег: нужно $'+price;
++ return null;
++}
+--- a/public/social-ui.mjs
++++ b/public/social-ui.mjs
+@@ -49,6 +49,21 @@
+   }
+   function show(s) {
+     current = s;
++    const nearby=$('nearbyPeers');
++    const nearbyKey=JSON.stringify((s.nearby||[]).map(p=>[p.id,p.host,p.port,p.name]));
++    if(nearby.dataset.key!==nearbyKey){
++      nearby.replaceChildren();
++      for(const p of s.nearby||[]){
++        const b=document.createElement('button');b.className='secondary';
++        b.textContent=p.name+' · '+p.host+':'+p.port+' · ДОБАВИТЬ ПО КОДУ';
++        b.onclick=()=>{$('friendCode').value=p.code;status('Найден '+p.name+'. Проверь, что это нужный игрок, затем нажми «Добавить». Он тоже должен добавить тебя.');};
++        nearby.append(b);
++      }
++      if(!s.nearby?.length)nearby.textContent='Игроков рядом пока нет. Оба откройте P2P; UDP 3091 должен быть разрешён. VPN должен поддерживать multicast.';
++      nearby.dataset.key=nearbyKey;
++    }
++    if(s.discoveryError)$('discoveryStatus').textContent=s.discoveryError;
++
+     $("friendCount").textContent = s.friends.length;
+     $("openPeer").hidden = s.listening;
+     $("closePeer").hidden = !s.listening;
+@@ -181,6 +196,10 @@
+         "Открой игру в Electron: браузерная версия не может слушать P2P-порт.",
+       );
+   }
++  const scan=document.createElement('section');scan.className='peerDiscovery';
++  scan.innerHTML='<button id="scanPeers" class="secondary">НАЙТИ ИГРОКОВ В LAN</button><small id="discoveryStatus">Автообновление каждые 3 секунды при открытом P2P. Интернет-подбор не поддерживается.</small><div id="nearbyPeers"></div>';
++  $('socialDialog').querySelector('.socialBody').before(scan);
++  $('scanPeers').onclick=()=>action('scan',{port:Number($('peerPort').value)},'Поиск LAN включён. Найденных игроков можно добавить по коду.');
+   $("openSocial").onclick = open;
+   $("pauseSocial").onclick = open;
+   $("closeSocial").onclick = () => {
+--- a/public/style.css
++++ b/public/style.css
+@@ -2412,3 +2412,8 @@
+ #world{display:block;width:100% !important;height:100% !important;max-width:none;max-height:none;outline:none}
+ input,textarea,[contenteditable]:not([contenteditable="false"]){user-select:text;-webkit-user-select:text}
+ .mouseCaptured #world{cursor:none}
++
++.buyReason{display:block;font-size:9px;line-height:1.2;color:#b7cbd6;white-space:normal;min-height:22px}#buyItems button:disabled{opacity:.65}#buyItems button{height:auto!important;min-height:105px}
++#crossSample i{position:absolute;display:block}
++
++.peerDiscovery{padding:12px 20px;border-top:1px solid #587077;max-height:180px;overflow:auto}.peerDiscovery small{display:block;margin:8px 0;color:#bbcdd4}#nearbyPeers{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:#b9cad2}
+--- a/public/utilities.mjs
++++ b/public/utilities.mjs
+@@ -145,7 +145,7 @@
+   if (dist > 16 || !lineVisible([g.x, g.y, g.z], eye, boxes)) return 0;
+   const f = direction(p.yaw, p.pitch),
+     dot = dist < 0.01 ? 1 : f.reduce((s, x, i) => s + (x * v[i]) / dist, 0);
+-  return clamp((1 - dist / 16) * (0.2 + 0.8 * Math.max(0, dot)), 0, 1);
++  return clamp(Math.min(1, (16 - dist) / 10) * (0.22 + 0.78 * Math.max(0, dot)), 0, 1);
+ }
+ export function floorAt(x, z, boxes = BOXES) {
+   let h = 0;
+--- a/server.mjs
++++ b/server.mjs
+@@ -184,6 +184,7 @@
+       difficulty,
+       mode: game.mode,
+       mapId: game.map.id,
++      attackTeam: game.attackTeam,
+       botCounts: botCounts(),
+       players: [...players.values()].map((p) => ({
+         id: p.id,
+@@ -268,7 +269,7 @@
+     balanceBots();
+     return getStatus();
+   }
+-  function route(p,t){return mapRoute(game.map,p,t);}
++  function route(p,t,lane=0){return mapRoute(game.map,p,t,lane);}
+ 
+   wss.on("connection", (ws) => {
+     let p = null, sessionToken=null,lastChat=0;
+@@ -399,7 +400,7 @@
+       if (defender) interact = Math.hypot(p.x - b.x, p.z - b.z) < 1.65;
+       else if (Math.hypot(p.x - b.x, p.z - b.z) < 6) objective = null;
+     } else if (b.state === "carried" && b.carrier === p.id) {
+-      p.botObjective ||= game.map.sites[p.team % 2];
++      p.botObjective ||= game.map.sites[(p.botSlot + game.round) % game.map.sites.length];
+       objective = p.botObjective;
+       interact = !!atSite(p, game.map.sites);
+     } else if (b.state === "dropped" && !defender) {
+@@ -407,8 +408,13 @@
+       if (Math.hypot(p.x - b.x, p.z - b.z) < 1.8) game.pickup(p);
+     } else if (!defender) {
+       const c = players.get(b.carrier);
+-      objective = c || game.map.sites[0];
+-    } else objective = target || game.map.sites[p.id.charCodeAt(0) % 2];
++      // Only the close escort follows the carrier; others pressure a different site.
++      const site=game.map.sites[(p.botSlot+game.round)%game.map.sites.length];
++      objective = p.botSlot%3===0 && c ? {x:c.x+(p.botSlot%2?2:-2),z:c.z+2} : site;
++    } else {
++      const site=game.map.sites[(p.botSlot+game.round)%game.map.sites.length];
++      objective=target || {x:site.x+(p.botSlot%2?2:-2),z:site.z+(p.botSlot%3-1)*2};
++    }
+     if (interact) {
+       p.vx = p.vz = 0;
+       game.objective(p, { interact: true }, now);
+@@ -452,7 +458,8 @@
+       return;
+     }
+     if (now > (p.routeAt || 0) || p.path.length === 0) {
+-      p.path = route(p, objective);
++      p.path = route(p, objective, p.botLane);
++      if(p.stuckFor>.65){p.botLane=(p.botLane+1)%3;p.path=route(p,objective,p.botLane);p.stuckFor=0;}
+       p.routeAt = now + 900;
+     }
+     const v = p.path[0] || [objective.x, objective.z];
+@@ -467,8 +474,12 @@
+         p.yaw = Math.atan2(-x, -z);
+         p.pitch = 0;
+       }
+-      move(p, (x / l) * dt * 3 * game.roundEvent.speed, (z / l) * dt * 3 * game.roundEvent.speed, game.map.boxes);
+-    }
++      let sx=0,sz=0;
++      for(const q of players.values())if(q!==p&&q.alive){const dx=p.x-q.x,dz=p.z-q.z,d=Math.hypot(dx,dz);if(d>0.01&&d<1.15){sx+=dx/d*(1.15-d)*2;sz+=dz/d*(1.15-d)*2;}}
++      const mx=x/l*3+sx,mz=z/l*3+sz,cap=Math.max(1,Math.hypot(mx,mz)/3.6);
++      move(p,mx/cap*dt*game.roundEvent.speed,mz/cap*dt*game.roundEvent.speed,game.map.boxes);
++    }
++    p.stuckFor = l>.3 && Math.hypot(p.x-oldX,p.z-oldZ)<.005 ? (p.stuckFor||0)+dt : 0;
+     p.vx = (p.x - oldX) / dt;
+     p.vz = (p.z - oldZ) / dt;
+     if (b.state === "dropped" && !defender) game.pickup(p);
+--- a/tests/network-tactical.test.mjs
++++ b/tests/network-tactical.test.mjs
+@@ -189,7 +189,7 @@
+       );
+       assert.equal(human.state.players.find((p) => p.id === human.state.bomb.carrier).bot, true);
+       await until(() => human.state.bomb.state === "planted", 65000);
+-      assert.equal(human.state.bomb.site, "A");
++      assert.ok(["A", "B"].includes(human.state.bomb.site), "bot may select either site according to its round role");
+       await until(() => human.state.reason === "exploded");
+     } finally {
+       human?.terminate();
+--- a/tests/stabilization-1.0.test.mjs
++++ b/tests/stabilization-1.0.test.mjs
+@@ -0,0 +1,98 @@
++import {test} from 'node:test';
++import assert from 'node:assert/strict';
++import {TacticalMatch} from '../match.mjs';
++import {SHOP,WEAPONS} from '../public/shared.mjs';
++import {purchaseError} from '../public/purchase.mjs';
++import {spectatorTarget,sideLabel,flashOpacity} from '../public/match-ui.mjs';
++import {aimDelta} from '../public/aim.mjs';
++import {parseAdvertisement,createPeerDiscovery} from '../peer-discovery.mjs';
++import {paintCrosshair} from '../public/crosshair.mjs';
++import {DEFAULTS} from '../public/settings-schema.mjs';
++import dgram from 'node:dgram';
++const wait=ms=>new Promise(r=>setTimeout(r,ms));
++function fixture(){const game=new TacticalMatch(new Map());const a=game.make('A',0),b=game.make('B',1);game.startRound();return {game,a,b};}
++test('purchase UI and authoritative server agree for every offer, both sides and balances',()=>{
++ for(const team of [0,1])for(const money of [0,200,800,4750,16000])for(const item of Object.keys(SHOP)){
++  const {game,a}=fixture();a.team=team;game.spawn(a,0);a.money=money;
++  const m=game.snapshot(Date.now()).players.find(p=>p.id===a.id);
++  const expected=purchaseError(m,item,{phase:game.phase,roundEvent:game.roundEvent,map:game.map,attackTeam:game.attackTeam});
++  assert.equal(game.buy(a,item),expected,`${team}/${money}/${item}`);
++  if(expected)assert.equal(a.money,money);else assert.equal(a.money,money-SHOP[item].price);
++ }
++});
++test('every affordable unrestricted weapon can be bought with AWP-level balance; side restrictions are explicit',()=>{
++ for(const id of Object.keys(WEAPONS).filter(id=>SHOP[id])){
++  const {game,a}=fixture();a.money=4750;
++  const err=game.buy(a,id);
++  if(SHOP[id].side==='CT')assert.match(err,/КТ/);else if(id==='pistol')assert.match(err,/уже/);else assert.equal(err,null,id);
++ }
++});
++test('surviving arsenal, magazines, reserve, utility, armor, owner and active weapon persist; death and halftime reset intentionally',()=>{
++ const {game,a,b}=fixture();a.money=16000;assert.equal(game.buy(a,'awp'),null);a.guns.awp.ammo=2;a.guns.awp.reserve=11;game.buy(a,'armor');game.buy(a,'smoke');
++ const saved=structuredClone({guns:a.guns,grenades:a.grenades,armor:a.armor,weapon:a.weapon});
++ game.phase='live';game.kill(b,a,Date.now());game.finish(0,'elimination');game.startRound();
++ for(const k of Object.keys(saved))assert.deepEqual(a[k],saved[k],k);
++ assert.equal(b.guns.awp,undefined);assert.ok(b.guns.pistol);
++ game.round=game.rules.halfRounds;game.startRound();assert.equal(a.guns.awp,undefined);assert.equal(a.money,800);
++});
++test('dead input cannot select, drop, rotate or shoot ally while spectating',()=>{
++ const {game,a}=fixture();game.phase='live';game.kill(a,null,Date.now());const before=structuredClone(a);game.input(a,{weapon:'m9',yaw:1,drop:true,fire:true},Date.now());assert.deepEqual(a,before);
++});
++test('spectator cycles only live connected allies, recovers missing target, ends on respawn',()=>{
++ const me={id:'me',team:0,alive:false},a={id:'a',team:0,alive:true},b={id:'b',team:0,alive:true},enemy={id:'enemy',team:1,alive:true};
++ const players=[me,a,b,enemy,{id:'off',team:0,alive:true,disconnected:true}];
++ assert.equal(spectatorTarget(players,me,null).id,'a');assert.equal(spectatorTarget(players,me,'a',1).id,'b');assert.equal(spectatorTarget(players,me,'a',-1).id,'b');a.alive=false;assert.equal(spectatorTarget(players,me,'a').id,'b');b.alive=false;assert.equal(spectatorTarget(players,me,'b'),null);me.alive=true;assert.equal(spectatorTarget(players,me,null),null);
++ assert.equal(sideLabel(0,0),'Т');assert.equal(sideLabel(0,1),'КТ');
++});
++test('flash detonation affects humans and bots, full white hold fades and walls block',()=>{
++ const {game,a,b}=fixture();game.map={...game.map,boxes:[]};Object.assign(a,{x:0,z:0,y:1.65,yaw:0,pitch:0});Object.assign(b,{x:0,z:0,y:1.65,yaw:0,pitch:0,bot:true});
++ game.detonate({kind:'flash',x:0,y:1.65,z:-3},10000);
++ for(const p of [a,b]){assert.ok(p.flash.peak>.9);assert.equal(flashOpacity(p.flash,10001),1);assert.ok(flashOpacity(p.flash,p.flash.until-100)<.2);assert.equal(flashOpacity(p.flash,p.flash.until),0);}
++ a.flash=null;game.map.boxes=[[0,-1.5,5,.5,4]];game.detonate({kind:'flash',x:0,y:1.65,z:-3},20000);assert.equal(a.flash,null);
++});
++test('crosshair preview positions four visible bars and responds to sliders',()=>{
++ const bars=Array.from({length:4},()=>({style:{}})),dot={style:{}};
++ const el={style:{setProperty(k,v){this[k]=v;}},querySelectorAll:()=>bars,querySelector:()=>dot};
++ paintCrosshair(el,{...DEFAULTS,crossSize:13,crossThickness:3,crossDot:true});
++ for(const b of bars){assert.equal(b.style.position,'absolute');assert.equal(b.style.display,'block');}
++ assert.equal(bars[0].style.height,'13px');assert.equal(bars[2].style.width,'13px');assert.equal(dot.hidden,false);
++});
++test('horizontal relative mouse never meets screen edge after 1000 revolutions, vertical reaches near 90 degrees',()=>{
++ let a={yaw:0,pitch:0};for(let i=0;i<10000;i++)a=aimDelta(a.yaw,a.pitch,200,0);
++ assert.ok(a.yaw>=0&&a.yaw<Math.PI*2);assert.ok(aimDelta(a.yaw,0,500,0).yaw!==a.yaw);
++ assert.equal(aimDelta(0,0,0,-100000).pitch,Math.PI/2-.01);assert.equal(aimDelta(0,0,0,100000).pitch,-Math.PI/2+.01);
++});
++test('untrusted discovery packets reject malformed and self advertisements, derive address from sender',()=>{
++ const m={protocol:'VOIDLINE-LAN-1',id:'a'.repeat(64),name:'<script> Alice',port:3090};const packet=x=>Buffer.from(JSON.stringify(x));
++ for(const x of [null,[],{},'x',{...m,port:22}])assert.equal(parseAdvertisement(packet(x),'127.0.0.1','b'.repeat(64)),null);
++ assert.equal(parseAdvertisement(packet(m),'127.0.0.1',m.id),null);const p=parseAdvertisement(packet(m),'127.0.0.1','b'.repeat(64));assert.equal(p.host,'127.0.0.1');assert.ok(!p.name.includes('<'));assert.ok(p.code.startsWith('VLF1.'));
++});
++test('two real UDP multicast peers discover each other without codes', {timeout:6000},async()=>{
++ const probe=dgram.createSocket('udp4');await new Promise(r=>probe.bind(0,r));const port=probe.address().port;probe.close();
++ let a,b;try{
++  a=await createPeerDiscovery({identity:()=>({id:'a'.repeat(64),name:'ALICE',port:43001}),port,intervalMs:100});
++  b=await createPeerDiscovery({identity:()=>({id:'b'.repeat(64),name:'BOB',port:43002}),port,intervalMs:100});
++  for(let i=0;i<40&&(!a.snapshot().nearby.length||!b.snapshot().nearby.length);i++)await wait(100);
++  assert.equal(a.snapshot().nearby[0]?.name,'BOB');assert.equal(b.snapshot().nearby[0]?.name,'ALICE');
++ }finally{a?.close();b?.close();}
++});
++
++import {route} from '../public/navigation.mjs';
++import {MAPS} from '../public/maps.mjs';
++import {blocked} from '../public/shared.mjs';
++import {createPointerCapture} from '../public/pointer-capture.mjs';
++test('all eight maps offer distinct lane paths, all segments collision checked',()=>{
++ for(const map of Object.values(MAPS)){
++  const p={x:map.spawns.T[0],z:map.spawns.T[1]};
++  const paths=[0,1,2].map(lane=>route(map,p,map.sites[0],lane));
++  assert.ok(new Set(paths.map(r=>JSON.stringify(r))).size>=2,map.id);
++  for(const r of paths){let old=[p.x,p.z];for(const point of r){const length=Math.hypot(point[0]-old[0],point[1]-old[1]),n=Math.max(1,Math.ceil(length/.2));for(let i=0;i<=n;i++)assert.equal(blocked(old[0]+(point[0]-old[0])*i/n,old[1]+(point[1]-old[1])*i/n,.36,map.boxes),false,map.id);old=point;}}
++ }
++});
++test('raw pointer request falls back once only for NotSupportedError and acquires actual lock',async()=>{
++ const doc=new EventTarget(),win=new EventTarget(),calls=[];doc.hidden=false;doc.hasFocus=()=>true;doc.pointerLockElement=null;win.setTimeout=setTimeout;win.clearTimeout=clearTimeout;
++ const el={focus(){},requestPointerLock(options){calls.push(options);if(options)return Promise.reject(Object.assign(Error('raw not supported'),{name:'NotSupportedError'}));doc.pointerLockElement=el;doc.dispatchEvent(new Event('pointerlockchange'));return Promise.resolve();}};
++ doc.exitPointerLock=()=>{doc.pointerLockElement=null;doc.dispatchEvent(new Event('pointerlockchange'));};
++ const capture=createPointerCapture({element:el,enabled:()=>true,doc,win});
++ try{assert.equal(await capture.request(),true);assert.equal(capture.locked,true);assert.deepEqual(calls,[{unadjustedMovement:true},undefined]);}finally{capture.destroy();}
++});

@@ -1,0 +1,3 @@
+resources/app.asar: matches verified unpacked Linux package
+voidline-arena: matches verified unpacked Linux package
+resources/app.asar.unpacked/build/native/linux-raw-input: matches verified unpacked Linux package

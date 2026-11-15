@@ -1,0 +1,8 @@
+PASS: 213/213 regression tests
+PASS: 160 samples/clip, two inspect variants, four clips, both knives, palm/forearm proxy clearance
+PASS: 120 interruption cycles per knife, no transform drift
+PASS: Linux Electron real input (3/F, primary/heavy attacks); packaged Linux XInput2 and game content
+PASS: 71 selected ASAR source files match for Linux/Windows
+PASS: AppImage ASAR matches tested Linux package
+PASS: NSIS archive integrity and matching Windows ASAR
+LIMIT: Windows runtime not tested; Linux software GPU/Xvfb, QA GPU watchdog disabled

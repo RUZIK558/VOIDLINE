@@ -1,0 +1,6 @@
+PASS All eight multilevel maps render in real Electron; screenshots saved; GPU worlds disposed
+PASS All 47 local PCM samples decode successfully in actual Web Audio context
+PASS Actual shot playback produces nonzero samples after compressor and gain (RMS 0.11261)
+PASS Every sample plays and every voice disconnects after completion
+PASS Volume zero mutes an already-playing sound, not just future shots
+PASS No JavaScript page errors or fatal overlays in map/audio checks

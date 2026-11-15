@@ -1,0 +1,594 @@
+{
+  "format": 1,
+  "build": "1.0.9",
+  "files": [
+    {
+      "path": "build/native/linux-launcher.sh",
+      "sha256": "26a99c033a4288cbd5eccb76f7a99d632c5b7991b106fbbde9c498e7234e3101"
+    },
+    {
+      "path": "build/native/linux-raw-input",
+      "sha256": "b61ee66f555ab4d70235b181dbe56b14400f769005fb353b54bfd10eeb078682"
+    },
+    {
+      "path": "diagnostic-log.cjs",
+      "sha256": "ee02188439c337c7ad5efc57ca37563d8100e60cebc9b96a82d25341c7a0b1dc"
+    },
+    {
+      "path": "display-controller.mjs",
+      "sha256": "72150d0330220dd22be6f88a9a73b598613f59b5ab09bb32275bd2e4e7e884e7"
+    },
+    {
+      "path": "electron.cjs",
+      "sha256": "1833b460d1232e882ffbe09904d950df12b5ee5fd41059816b224f446fe11adb"
+    },
+    {
+      "path": "host-controller.mjs",
+      "sha256": "bc23234f53b4767e83a2df97f85a81cbb80658528d5582b843124cc1b86063dc"
+    },
+    {
+      "path": "linux-input.mjs",
+      "sha256": "ca04f9751e81ce684e2e59f117ecb2259426a1f39882e5483d245ff53386b28f"
+    },
+    {
+      "path": "match.mjs",
+      "sha256": "55061ce039020e4527f5c0767f1da0d2073a701cc0d3e763e4985ef21ff8f3d8"
+    },
+    {
+      "path": "net-session.mjs",
+      "sha256": "8196035927e0ecee12cde9d0b98202f89fbd27f442646a93ec56a85b24d3102d"
+    },
+    {
+      "path": "node_modules/three/build/three.core.js",
+      "sha256": "eb077d2417f61d3e6d9264c317cabc4ea35769ed6b0ab533067292a550784c20"
+    },
+    {
+      "path": "node_modules/three/build/three.module.js",
+      "sha256": "c8211c69345d2e9949dc7a8ac969380497aa0600a5a8ac6a459c8cd02dd9cb8a"
+    },
+    {
+      "path": "node_modules/ws/index.js",
+      "sha256": "70a117e957f85622a6fe2be39afb9597489965fe3fe6ebefd84adb8f0d9d114a"
+    },
+    {
+      "path": "node_modules/ws/lib/buffer-util.js",
+      "sha256": "8b0a45739132f82e25ea13163780abf547ccfe989267f3eb7abb475beec92da3"
+    },
+    {
+      "path": "node_modules/ws/lib/constants.js",
+      "sha256": "7efe5c0b888e4fde8bd9076c65b81bfd0df0963810b977d890df126929bb9190"
+    },
+    {
+      "path": "node_modules/ws/lib/event-target.js",
+      "sha256": "c45d3c6e12d170c860c0c3f1a050aa0f864d9806632b609a1e607d675aba128c"
+    },
+    {
+      "path": "node_modules/ws/lib/extension.js",
+      "sha256": "852564f0f6b460287043803eae732666fb5610f676874354fc89f06aa4e986ed"
+    },
+    {
+      "path": "node_modules/ws/lib/limiter.js",
+      "sha256": "e0469d4b83f6ba764b15f80e1766b75c136fbff68f048f4c050f0b1c7f065f69"
+    },
+    {
+      "path": "node_modules/ws/lib/permessage-deflate.js",
+      "sha256": "adcedcb3069b7c6db3fd6cec93699ef70bd4061126b987dd9a8f7cb16d2b7530"
+    },
+    {
+      "path": "node_modules/ws/lib/receiver.js",
+      "sha256": "7b9f6afc1fffb5c98d768d7d3d6fc1b709f28b45c6ae2682ff255075394323d9"
+    },
+    {
+      "path": "node_modules/ws/lib/sender.js",
+      "sha256": "a80e8688dde53d46d836a58c9d15121ee12e978b7b0f656ed818c63d20df5f94"
+    },
+    {
+      "path": "node_modules/ws/lib/stream.js",
+      "sha256": "a56fcb6e2b152097ee820b6f5410b1f71e59819b45d08d9f8bda588fe39070ec"
+    },
+    {
+      "path": "node_modules/ws/lib/subprotocol.js",
+      "sha256": "be3f6323d6f549568577dcba9004c1479d95c65a7abb0fe0c582875b9fac0b7c"
+    },
+    {
+      "path": "node_modules/ws/lib/validation.js",
+      "sha256": "41ce8e83d0d434132e1704895fedb91f6703a701b42d91c80954ab29b2845593"
+    },
+    {
+      "path": "node_modules/ws/lib/websocket-server.js",
+      "sha256": "fe8a410e89325608dc94d09778a2650bf041b9b7f5dff61d5005ea111e09a508"
+    },
+    {
+      "path": "node_modules/ws/lib/websocket.js",
+      "sha256": "ea50fd045185975e0e572637cd96fa065a7e988a1d1c890d18002c75a8a253b9"
+    },
+    {
+      "path": "node_modules/ws/wrapper.mjs",
+      "sha256": "e37bddaf6d40a3b2ee107906f792cc5117e543cba776fa25f7aeeb3908637f7c"
+    },
+    {
+      "path": "p2p.mjs",
+      "sha256": "5cfd072f4fedefdcc5a2b6c8db2fb55933a88800ce246088f5b4dbc23a6b7b80"
+    },
+    {
+      "path": "package.json",
+      "sha256": "170c8a8ba4a55be619ee0998fef70f2c2bf8da6082b1cae0ff26b42b85e3c4d0"
+    },
+    {
+      "path": "peer-discovery.mjs",
+      "sha256": "c12a269f8439d0aaea3c045c45cf6dddb71c0ab5d1f7830faa8cdcfc472a0ea8"
+    },
+    {
+      "path": "preload.cjs",
+      "sha256": "0fd80f8f7b382fea84d15ca481aa3e04ba8df616700ac107f125c57587e282e6"
+    },
+    {
+      "path": "profile-store.mjs",
+      "sha256": "82c9d2b2ccce72761e5a79dee5cb9e950a9c38c0c25563d771191e6076854f43"
+    },
+    {
+      "path": "public/aim.mjs",
+      "sha256": "c49bcc498e92cf26b0c2402f88c04787e27fce35a488a2b0607468c536970ca5"
+    },
+    {
+      "path": "public/android-bootstrap.js",
+      "sha256": "c7d3ed8ef188363cd610199ccc6ddea362f87678f61d4e1345ef6c6c01663ad3"
+    },
+    {
+      "path": "public/assets/audio/beep.wav",
+      "sha256": "b830b2604741989a6d28ae65aa760c33660c0ef7d862fe7a79c555fe84309f16"
+    },
+    {
+      "path": "public/assets/audio/bounce.wav",
+      "sha256": "6ba2314393eb361e06233d5c9ac6320c4d6ed9977893eb7f439de9a94c3c7c0e"
+    },
+    {
+      "path": "public/assets/audio/buy.wav",
+      "sha256": "0f58f7027bcb368e2995a4c7613d8191bc6baccb837508366018ff27d8f5e4e9"
+    },
+    {
+      "path": "public/assets/audio/chat.wav",
+      "sha256": "c6f066d9fb4f1b0e34ca304b4779716a1741df8211a4c390b229c74215143885"
+    },
+    {
+      "path": "public/assets/audio/defuse.wav",
+      "sha256": "27d41e1071bc6889eb0d5e62f787e0a0e6c40e46d6a0ae8aaf4b7f990f6ec26e"
+    },
+    {
+      "path": "public/assets/audio/dry.wav",
+      "sha256": "6daacb6852d52190d4fd7a25bc235675b37dc6455f5784b838456bcddf8d3206"
+    },
+    {
+      "path": "public/assets/audio/equip.wav",
+      "sha256": "7921a3b2d610e2d7e9e7e36103fb265082c3f9527b49cf0d6657bc03a3ca8c3f"
+    },
+    {
+      "path": "public/assets/audio/explosion.wav",
+      "sha256": "f283411a3c02182bbc591d3f5bfb729912a721d90c75079e1c93cedf34c08347"
+    },
+    {
+      "path": "public/assets/audio/flash.wav",
+      "sha256": "591e3cecc1e34dfc9c4d1c5bef60b2d2abbd1309d7a740cfe856ed1b6b7a1107"
+    },
+    {
+      "path": "public/assets/audio/hiss.wav",
+      "sha256": "6d71760ba86922ff614fb1c849630d82c81a40ad31fc3d5d85886870eedc2aa4"
+    },
+    {
+      "path": "public/assets/audio/hit.wav",
+      "sha256": "53b598627da061ae5b4d53e514e7ca8a1a5208c8c10f79d7e73a3e5b32f82143"
+    },
+    {
+      "path": "public/assets/audio/hurt.wav",
+      "sha256": "bc527ade1b0c9efcf68a276c40afa171c65756c4f21f104d11f8287fb6ea1af2"
+    },
+    {
+      "path": "public/assets/audio/jump.wav",
+      "sha256": "77225caf92e83a51bdab5907acf6642a0245293f7454d1331987fa19e3a1f1e8"
+    },
+    {
+      "path": "public/assets/audio/knife.wav",
+      "sha256": "45266465fff4435b717956f1a667c80cadd6d9d5a2afd0b6785a5f97a3ba6951"
+    },
+    {
+      "path": "public/assets/audio/land.wav",
+      "sha256": "86d25d3c1448c4833396656ffe51d9af4e4e34747b92b0f0a5d326b1b9e40033"
+    },
+    {
+      "path": "public/assets/audio/LICENSE.txt",
+      "sha256": "ab77aac33a4fb36fb23b5ce8ded4f49d97d5f3cf6520f1b22ee0c09968e01e53"
+    },
+    {
+      "path": "public/assets/audio/live.wav",
+      "sha256": "a8fec45a11d3c08d76691efe22b9620b4f9dfdc3a1bee8b27f2354d7e59dacb6"
+    },
+    {
+      "path": "public/assets/audio/loss.wav",
+      "sha256": "b414c457709df57fec292b319d57e592599b4cc9600764dffb54e9178c310ec4"
+    },
+    {
+      "path": "public/assets/audio/manifest.json",
+      "sha256": "e71f0a764185a3cba5ea92584bdf4bb09048144f5043ff07c2ca7974d84d0d75"
+    },
+    {
+      "path": "public/assets/audio/plant.wav",
+      "sha256": "06c807e208c4f3761825a03257c059a2a69ec27bf76bd30b8228d416aa9c2161"
+    },
+    {
+      "path": "public/assets/audio/reload-pistol.wav",
+      "sha256": "fe6405a92fe3ccee106468251c77dd18698234742526b9c207233fdccca0c548"
+    },
+    {
+      "path": "public/assets/audio/reload-rifle.wav",
+      "sha256": "28dcc87ea4fc81a40c1d974be5f0732ccf4e43b14b5a314d345e7563783a45b1"
+    },
+    {
+      "path": "public/assets/audio/reload-sniper.wav",
+      "sha256": "bab9850a3026fbc8eb0a995616bd2ea65a6d87aae28461e290d32f178478d817"
+    },
+    {
+      "path": "public/assets/audio/round.wav",
+      "sha256": "97ad0668a1a7c82cef6723e1782043a8b9c3aea1774a4b1b9d602d43b5d82547"
+    },
+    {
+      "path": "public/assets/audio/scope.wav",
+      "sha256": "3577c749c6ca5a9bd9d243863e90defac93e5a4fe9b7ca8cb3397fb43525005e"
+    },
+    {
+      "path": "public/assets/audio/shot-ak47.wav",
+      "sha256": "895be4e71577a201d876acdd72b1b9befe48b47533e65d95fd180c28afc7eeff"
+    },
+    {
+      "path": "public/assets/audio/shot-awp.wav",
+      "sha256": "1f67953ba55e77a84c84c7923570e67ef69fd375ce2f123d8f606c15b591d021"
+    },
+    {
+      "path": "public/assets/audio/shot-deagle.wav",
+      "sha256": "71c4ec3b79b4b4d5959273a42855735cc62369762131342b62b0872c17f72283"
+    },
+    {
+      "path": "public/assets/audio/shot-glock.wav",
+      "sha256": "105ea63f8304d9f4d45ccbdbc7f5c1bc50737b85c3cd54cc6af57317ea44e7e6"
+    },
+    {
+      "path": "public/assets/audio/shot-m4a1s.wav",
+      "sha256": "e4be04ab3a2170bad56e22fb0da73fea64b2550cd79d03fc5a6a8184a87fa758"
+    },
+    {
+      "path": "public/assets/audio/shot-mp9.wav",
+      "sha256": "16efd3ca821cb4bbe188ad790149726e340aa855d0754be48bd378b29c35bbcb"
+    },
+    {
+      "path": "public/assets/audio/shot-p90.wav",
+      "sha256": "a9741ba473e54663decfb04f6baaf05a919c507ba29c87e814b43d9304ce8cb4"
+    },
+    {
+      "path": "public/assets/audio/shot-pistol.wav",
+      "sha256": "d1aa94f9536a9eac5fd6dfa7480eefd9defc418da09a27cc8aec61d02e661865"
+    },
+    {
+      "path": "public/assets/audio/shot-rifle.wav",
+      "sha256": "2efa6b8cb907be1f8673ed0fff1ca88d4a433fd6fd62074f64c2c78d8d2f1a2f"
+    },
+    {
+      "path": "public/assets/audio/shot-ssg08.wav",
+      "sha256": "72c735fe75f9cf381b95a37773677f23fb0b6a15785836034f5045f0ae1f9ebe"
+    },
+    {
+      "path": "public/assets/audio/step-metal-0.wav",
+      "sha256": "3591279ed26292779f5ddfcd6460f1311193350a8154db8a184fbd8d377c0da0"
+    },
+    {
+      "path": "public/assets/audio/step-metal-1.wav",
+      "sha256": "1e30192d37e55f98ea54353b20ea479873c6bf5de84fd26c94a46b6c4274bb4f"
+    },
+    {
+      "path": "public/assets/audio/step-metal-2.wav",
+      "sha256": "a406c8cd5625ca26f667a36619e622775fe324b7ecc14309a32953a64269a98c"
+    },
+    {
+      "path": "public/assets/audio/step-sand-0.wav",
+      "sha256": "48b993e0179327ca2f9238ccad66c0991aaa9f912df8d7fdb1121aa902e6e415"
+    },
+    {
+      "path": "public/assets/audio/step-sand-1.wav",
+      "sha256": "14754b8b763b3a46ad18263c8af6bc6a87346fbec7d85c780819f90c0362669a"
+    },
+    {
+      "path": "public/assets/audio/step-sand-2.wav",
+      "sha256": "9a9558c3c2732185db0745a63ef95e1a14d8c2b46674972d35930601706051c6"
+    },
+    {
+      "path": "public/assets/audio/step-snow-0.wav",
+      "sha256": "7477874f2d7ed806d5f39b1b60b6887b467ef054d38b8adb84cc858f6a51bde1"
+    },
+    {
+      "path": "public/assets/audio/step-snow-1.wav",
+      "sha256": "bd11028c971882f6ae06162966f08230c8ca5300b9bcb43c20cf5f9d8ec0a02f"
+    },
+    {
+      "path": "public/assets/audio/step-snow-2.wav",
+      "sha256": "b426b524354f404309fab33af46289e826532ad83c37370d7cda3293b6eb048e"
+    },
+    {
+      "path": "public/assets/audio/step-stone-0.wav",
+      "sha256": "6cdd007a6ef4a7f193eedce295e70320fb660cc86333971410e6e6e0f0c7b94e"
+    },
+    {
+      "path": "public/assets/audio/step-stone-1.wav",
+      "sha256": "78f0540e476c551ea254abb7b1ab8e263b50fe2df1cd1c52564b70bbc9768576"
+    },
+    {
+      "path": "public/assets/audio/step-stone-2.wav",
+      "sha256": "4ece77272873c18e1a2471aada1d3d01560b4f84433eb3e4a6c26cc4867c607f"
+    },
+    {
+      "path": "public/assets/audio/throw.wav",
+      "sha256": "7996e1ff21bdaf380ac9277a43054cf670ebc2a3c73789873d36a92e025448c7"
+    },
+    {
+      "path": "public/assets/audio/win.wav",
+      "sha256": "a27ee5a7e74ee21089ab9c936ae025f626ef4e1df1842d44a864a79e0fda93ae"
+    },
+    {
+      "path": "public/assets/kestrel-rig.glb",
+      "sha256": "e0141d8fe1c5aa42b7c0ff4f56954c48706e268757d52440442b9021c2528b8f"
+    },
+    {
+      "path": "public/assets/operator-albedo.png",
+      "sha256": "3ef2d39d69ec133b97513c2af62cda94740ce431f854d5cb10d62ea2b9af1136"
+    },
+    {
+      "path": "public/assets/operator-normal.png",
+      "sha256": "fc9170fc596d2d5f129d04a596f22c9f8e3e75fbd7cf5bf0ce65620250650689"
+    },
+    {
+      "path": "public/assets/operator-roughness.png",
+      "sha256": "edbfa4eb14820a873b4a9de9de373f0e3e098d84b916c1fb772fd4ae90f102b1"
+    },
+    {
+      "path": "public/assets/pistol-view-rig.glb",
+      "sha256": "d09a2e91aaf82343aa592c558176df25a99245b121a06c1910257e00d2c0dc30"
+    },
+    {
+      "path": "public/assets/plaster-albedo.jpg",
+      "sha256": "08d365f9c1f2cb45db28e8d18563363fcf7c9e71064f68645d6c9e3d02bd4363"
+    },
+    {
+      "path": "public/assets/plaster-normal.png",
+      "sha256": "0ed7e5badf2d7c9363fe28ccba6b69bd5279b857191348ab03e70994afe10c1d"
+    },
+    {
+      "path": "public/assets/plaster-roughness.png",
+      "sha256": "35d36a758443588424c59a394345d2aa7b0a3f0aae341730da0e0af9ca8d870d"
+    },
+    {
+      "path": "public/assets/rifle-view-rig.glb",
+      "sha256": "7601e725ceee86a42ca7d12966c0ad2640f8242e5c89e0a207dd1b6e0d979308"
+    },
+    {
+      "path": "public/assets/voidline.svg",
+      "sha256": "7c9f6f3e535f6c985a0788896890dabf3919087599ca1b2ab496956cabbaacbf"
+    },
+    {
+      "path": "public/audio.mjs",
+      "sha256": "56924b29fab9cebcb45582415c42ae48ffbf2bc2e14d7151e1dadbc3f247ab0c"
+    },
+    {
+      "path": "public/batch.mjs",
+      "sha256": "35c318210f297ca44a83838fd4e2e226386edc9bdbea15aa3de5d3c27e14199c"
+    },
+    {
+      "path": "public/chat-notices.mjs",
+      "sha256": "0d79819034e1e27da7b1d0a6536d32b91b777d66575ab38dafffb8cefeb25281"
+    },
+    {
+      "path": "public/cosmetics.mjs",
+      "sha256": "16fea8b821a6d6add5c44501a73f8002d9c9b31d8e98638fd33c7f381fb2c517"
+    },
+    {
+      "path": "public/crosshair.mjs",
+      "sha256": "d47c94ae1e20f6214af8447a6608b7605958395f8b5bed258e2d8a181028f0b0"
+    },
+    {
+      "path": "public/diagnostics.mjs",
+      "sha256": "e50b9783e4360c94096dcc7f8d096ba471abd3f89ef2e88e07fc4c0c42cca61c"
+    },
+    {
+      "path": "public/game.mjs",
+      "sha256": "568de6423958d23c56b611e5caa424b539c359af9e33e8cec38118916e15160d"
+    },
+    {
+      "path": "public/geometry-utils.mjs",
+      "sha256": "37f3a6be47046290f6ce7c27cc6c05677e4055033e5470c2f44cba22fd8fdd01"
+    },
+    {
+      "path": "public/host-ui.mjs",
+      "sha256": "01e90ad47bf3c1d60e60b5af1207f51baae739469958c99832cc621caed28005"
+    },
+    {
+      "path": "public/icons.mjs",
+      "sha256": "3ffb4179142a078fc123e9ba702d8ae351e263945b737790c16ba6d574e99b13"
+    },
+    {
+      "path": "public/index.html",
+      "sha256": "5c2ce0ce66a46901a40bf4934a13b0c46f7ccfc369a11aa3bf51b672e9dea394"
+    },
+    {
+      "path": "public/input-policy.mjs",
+      "sha256": "eb10fc298b5bb59827e0539ff9060e89f36d3779616accb8d5d1a34d9a234ef9"
+    },
+    {
+      "path": "public/inventory-ui.mjs",
+      "sha256": "42a4ffb5e6c5b9197b3c6c2660b2901301ee0310d92229abfa92b2d4f74d31da"
+    },
+    {
+      "path": "public/knife-controller.mjs",
+      "sha256": "11abbb87f404e40c4817f13be0503c495c774d0ddebe390ab6f2afca5717e436"
+    },
+    {
+      "path": "public/knife-geometry.mjs",
+      "sha256": "aab7e427bdbd6c7a609cbea15441f8164549283f514e5b55739df28fa44dd505"
+    },
+    {
+      "path": "public/knife-grip.mjs",
+      "sha256": "399ca6d91f186d5f0d6a8d9d0851f43c077db9fb7e76045c9b0631baaa389a60"
+    },
+    {
+      "path": "public/knife-motion.mjs",
+      "sha256": "f43ae19b3d62adeec2911eff8bb6abbb8881debacb61032a0f29321804fec1b4"
+    },
+    {
+      "path": "public/knives.mjs",
+      "sha256": "a41c5696f1760385579ceefb1a7def6826776fd3cbd1f1138570622fa0b37b27"
+    },
+    {
+      "path": "public/lighting.mjs",
+      "sha256": "9022c6f5822093134a806fe812f198f6779809868e1539798e68a2c887bb21a2"
+    },
+    {
+      "path": "public/lobby.mjs",
+      "sha256": "8b5b3088f852c1ce258ad4d0e1c94faf6e189082a4dbdf54d3cb01202a3623d0"
+    },
+    {
+      "path": "public/map-details.mjs",
+      "sha256": "3ae66ccac984535498d8fe1deb6af12ab07e15b755f66ac2e3eeed0249d5fd93"
+    },
+    {
+      "path": "public/map-world.mjs",
+      "sha256": "9a122efce0a34e3f70410c43c06fb8b1f21f7c17642c8085dc66f78a172cd085"
+    },
+    {
+      "path": "public/maps.mjs",
+      "sha256": "659a88bc7c611577657b29eebe49b059be324816c08257ee6f640b5f49fda3eb"
+    },
+    {
+      "path": "public/match-ui.mjs",
+      "sha256": "0aedd222d90c01f7561e9298f46f547790840012a4058b889454d01c33f398d2"
+    },
+    {
+      "path": "public/models.mjs",
+      "sha256": "2361765082a34ae8ca6b142640ab92b41f43f1c2529d23fff8e101734b71cf3f"
+    },
+    {
+      "path": "public/navigation.mjs",
+      "sha256": "04427f0616d2425439043c972438b551566c09bcfa1622ac53be0ed799d81bfa"
+    },
+    {
+      "path": "public/pointer-capture.mjs",
+      "sha256": "64646d1b8308d67a26e9dc9a2e1e1778b5dc8f8fbcbf616ad0c13881866827b1"
+    },
+    {
+      "path": "public/postfx.mjs",
+      "sha256": "81001704be3d111128e51e4580a4668dac5046bcbc2f6a76948f0fe0977692f9"
+    },
+    {
+      "path": "public/purchase.mjs",
+      "sha256": "c2b28d90e3f99683987551adbaadf19139e2c696af5f69b12a68b034fcf30e2a"
+    },
+    {
+      "path": "public/resources.mjs",
+      "sha256": "9b3b559f8e9dae81391cef30caa812d8935486959cd31597765c2fa0b0f4ef11"
+    },
+    {
+      "path": "public/rigging.mjs",
+      "sha256": "236efce4e9f2787e8a763d42580a0c4a0ba2f470aed698a2a737693a4dff707c"
+    },
+    {
+      "path": "public/round-events.mjs",
+      "sha256": "d2bb617f4673b2b84dceba8189fe1964fbdb65734dee853aa85f57e91deea71a"
+    },
+    {
+      "path": "public/settings-schema.mjs",
+      "sha256": "6bbcc2b538b529a86755a707b9b6c85583b98b22ef591490a6cb76cbbefc819c"
+    },
+    {
+      "path": "public/settings-ui.mjs",
+      "sha256": "4473092d65ecb09285a194f0dc55d9e5f40e692ab350da86c5c3dd2519a7c217"
+    },
+    {
+      "path": "public/shared.mjs",
+      "sha256": "545bf50413e92fff543ac274ec31366ef843c8a2af79bc105db9a294b59992b6"
+    },
+    {
+      "path": "public/shop-preview.mjs",
+      "sha256": "c69385ef0f2a820b47c4e5c48f5ecef0d0794e2af66983314932fed4fe43b145"
+    },
+    {
+      "path": "public/skin-materials.mjs",
+      "sha256": "153d2f278277ace17c04d6683fda9d2ac730e23b8c2253740bd296a21864eb37"
+    },
+    {
+      "path": "public/slot-cycle.mjs",
+      "sha256": "7cd2277069c6a0392e9d70f442ccb1370e248cd7458d3145ca14600ebf47ba6a"
+    },
+    {
+      "path": "public/social-ui.mjs",
+      "sha256": "76652ce4cb4b8fe4a86312dbe2454a8e32721936b80766180c5a05888cbd4b84"
+    },
+    {
+      "path": "public/style.css",
+      "sha256": "614239ec3debcaa291180e09377f5e2b76412dd0225acbfdcefd19dd1fa6b97e"
+    },
+    {
+      "path": "public/tactical-input.mjs",
+      "sha256": "b34c43f667dfdee848000a95bf332538dcc0eb91bf425bcfe26d247e1167a370"
+    },
+    {
+      "path": "public/tactical-ui.mjs",
+      "sha256": "f3def3e5bb6c7aee4c5f8f38bf6e57213cb8bfae41105e7e59a2142d7cafc3fd"
+    },
+    {
+      "path": "public/tactical.mjs",
+      "sha256": "d8b76b5b1669bee11a33a35eadbd10a7fc8a912b55b9b1a1951269e32ad44ffd"
+    },
+    {
+      "path": "public/team-ui.mjs",
+      "sha256": "4d4099d3fbbffe3eaebad19543ae092542bf5371e86c80e49e11e21baa7a317a"
+    },
+    {
+      "path": "public/THREE-LICENSE.txt",
+      "sha256": "bfe119ea4fd413f5f7ca3fcd63adb0c4a073ed39daa2fe7d3e6b769e21272601"
+    },
+    {
+      "path": "public/utilities.mjs",
+      "sha256": "8a75aa7fe12327704c4b6187b2aad8ed778636ac962209c54b0b7c3cd66419aa"
+    },
+    {
+      "path": "public/utility-fx.mjs",
+      "sha256": "3336a5b5e39bdcfcdc940e7a5d30f7a77e9858f4cab6fb8797022c4deb5bb3f5"
+    },
+    {
+      "path": "public/vcac-client.mjs",
+      "sha256": "2007ac7130710af77b8b11d61bd8ef9fe55002c543f9cd14b82358e078810574"
+    },
+    {
+      "path": "public/voice.mjs",
+      "sha256": "149d2235fd3a642d570a265491f05af2e3125c7de18a8cc0f50620af751419be"
+    },
+    {
+      "path": "server.mjs",
+      "sha256": "e694f405fe929f75e1978eed77850898af68c6c2aef134b3579da0ac38ede02a"
+    },
+    {
+      "path": "settings-store.mjs",
+      "sha256": "ea54b4c9416c73126c8d972f5f4e22f5f9dada2b3d9dbf239c47ed650d1c523b"
+    },
+    {
+      "path": "startup.mjs",
+      "sha256": "383385a784b78d13ca8b78c844aeaaa0cccf4f42d8da2282413634ca08aa91ae"
+    },
+    {
+      "path": "tactical-channel.mjs",
+      "sha256": "a14ea46cf554a1859cdd320414191f5507227648d643367679f84b5a5cee8a04"
+    },
+    {
+      "path": "vcac.mjs",
+      "sha256": "fed453dd3abd75772893aed380abca0ba5978fd97078d58dfa189c502113ecf4"
+    },
+    {
+      "path": "vsac.mjs",
+      "sha256": "a44a2bd0eb44053bee956f8128293fc7eb6dc6c23fd89ca74c743020345fe573"
+    }
+  ]
+}

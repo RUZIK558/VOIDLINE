@@ -1,0 +1,4 @@
+DESKTOP: map selection8, explicit CT entry, frost snapshot, all10 independent skins + persistence PASS
+WEBGL LOSS: recovery overlay, downloaded report and safe-settings reload PASS
+MOBILE: landscape CT/T screen + Oasis entry + touch controls PASS
+PAGEERRORS: none

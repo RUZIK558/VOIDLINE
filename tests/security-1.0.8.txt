@@ -1,0 +1,22 @@
+✔ interrupting inspect with unkeyed hinge cannot preserve a half-folded blade (5.194159ms)
+✔ held constant target is resampled, never recursively blended into an old pose (0.632634ms)
+✔ all loops finish in canonical rest; stop/reset cancels paused actions and alternate inspect (12.5953ms)
+✔ idle pose watchdog recovers corrupt or abandoned transforms without a new input (0.57752ms)
+✔ stopAllAction is a real lifecycle reset, not an abandoned partial blend (0.501512ms)
+✔ live VSAC rejects replay/stat injection, isolates a flooder and keeps the honest connection alive (227.384982ms)
+✔ VCAC verifies its listed game files, catches edits/missing files and reports no contents (24.241515ms)
+✔ VCAC fails closed for malformed/truncated manifest and never accepts an arbitrary path (6.756509ms)
+✔ VCAC refuses a symlink out of the game directory; development is explicitly unverified (5.673339ms)
+✔ VSAC accepts normal sequenced controls but rejects stale/replayed input (2.296494ms)
+✔ VSAC refuses movement/stat injection, invalid scalars, arrays and prototype payloads (0.563922ms)
+✔ token buckets tolerate 60Hz traffic and bounded bursts, but disconnect sustained flood (10.037756ms)
+✔ a fresh per-connection nonce and monotonic reports are diagnostics, not proof of a clean PC (0.770183ms)
+✔ prejoin commands, binary packets, oversized bodies and unknown types are rejected (0.644418ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 705.889018

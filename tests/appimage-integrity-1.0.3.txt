@@ -1,0 +1,3 @@
+PASS: AppImage matches verified Linux package: resources/app.asar
+PASS: AppImage matches verified Linux package: voidline-arena
+PASS: AppImage matches verified Linux package: resources/app.asar.unpacked/build/native/linux-raw-input

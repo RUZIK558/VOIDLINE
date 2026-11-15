@@ -1,0 +1,3 @@
+REAL WEBRTC {"enabled":true,"connections":["connected"],"remoteStreams":1}
+REAL WEBRTC {"enabled":true,"connections":["connected"],"remoteStreams":1}
+SYNTHETIC MICROPHONE / LAN WEBRTC / STOP PASS

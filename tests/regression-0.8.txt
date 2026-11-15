@@ -1,0 +1,23 @@
+✔ all ten weapons have real magazines, prices, cadence, reload, damage and slots (2.173177ms)
+✔ arsenal: slot replacement drops previous gun, preserves ammo; side restrictions are server-enforced (1.245496ms)
+✔ new automatic guns fire held trigger, sniper/pistol require new click; scopes reduce standing spread (1.910455ms)
+✔ new weapon reload transfers exact reserve and obeys its own reload duration (0.526649ms)
+✔ random event is server-owned, transmitted, expires with round, and classic resets modifiers (1.112033ms)
+✔ crosshair settings clamp numbers, validate colors, preserve switches (0.403052ms)
+✔ resume tokens are unguessable, not reusable concurrently, expire and cannot be forged (2.618417ms)
+✔ lag compensation clamps client timestamps to 200ms and never accepts future time (0.380147ms)
+✔ eight original maps: unique geometry, valid collision bounds; every spawn can reach both sites (208.320423ms)
+✔ map context reaches movement, hitscan, site planting and grenade physics without global mutation (3.207685ms)
+✔ v1 profiles migrate to ten weapon IDs; individual skins persist and malformed partials are rejected (0.380956ms)
+✔ server applies skin per gun on purchase/next round; pickup keeps original owner paint (1.434434ms)
+✔ owned resources release once; shared materials and their textures are not destroyed (0.367852ms)
+✔ real server: map catalog validation + nonjoining team screen info + chosen map snapshot (67.722351ms)
+✔ profile persists in a stable directory across sessions and concurrent saves are atomic (17.678167ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 562.099846

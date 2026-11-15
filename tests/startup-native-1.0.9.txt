@@ -1,0 +1,5 @@
+PASS Actual Electron ignores an intentionally broken Chromium/system proxy for the isolated local game session
+PASS Initial launch probes the actual HTTP game document and logs successful navigation
+PASS Real Electron ERR_FAILED (-2) is reproduced by aborting the first main-document request; second attempt restores the UI
+PASS Actual Electron loads the game even when the separate Node readiness probe fails with the exact reported timeout
+PASS Recovery preserves saved settings instead of resetting the profile

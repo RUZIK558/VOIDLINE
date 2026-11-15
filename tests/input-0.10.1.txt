@@ -1,0 +1,19 @@
+✔ Ctrl+W/A still reach gameplay policy but their page default is prevented (1.677686ms)
+✔ shell guard accepts both Electron and DOM input, including reload/zoom/close (0.342984ms)
+✔ editable controls and bindings preserve native text editing and gameplay keys (0.321207ms)
+✔ capture never reports a lock just because requestPointerLock was called (1.019941ms)
+✔ rejected/unsupported capture is handled, paused, not an unhandled rejection (0.717126ms)
+✔ pending requests are not repeated; legacy void API waits for actual event (0.407093ms)
+✔ blur and hidden document clear real capture and require explicit resume (0.383219ms)
+✔ late capture cannot reactivate aim behind a modal or lost focus (0.291076ms)
+✔ pointer lock timeout returns an actionable recovery message (45.24599ms)
+✔ resize uses viewport aspect, never internal render resolution or DPR (0.980459ms)
+✔ canvas CSS sizes are viewport owned and Electron menu is removed, not hidden (0.793534ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 117.768431

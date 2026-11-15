@@ -1,0 +1,2 @@
+ALL MAP RENDERS {"terminal":{"geometries":19,"textures":8,"calls":19},"courtyard":{"geometries":19,"textures":8,"calls":19},"dockyard":{"geometries":16,"textures":8,"calls":16},"foundry":{"geometries":18,"textures":8,"calls":18},"oasis":{"geometries":19,"textures":8,"calls":19},"depot":{"geometries":17,"textures":8,"calls":17},"frost":{"geometries":18,"textures":8,"calls":18},"bastion":{"geometries":17,"textures":8,"calls":17}}
+24 MAP SWITCHES: bounded GPU memory {"warm":{"geometries":19,"textures":8,"calls":19},"end":{"geometries":19,"textures":8,"calls":19}}

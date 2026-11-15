@@ -1,0 +1,30 @@
+
+> voidline-arena@0.10.1 dist
+> electron-builder --linux AppImage --win nsis portable --x64
+
+  • electron-builder  version=26.15.3 os=6.18.49
+  • loaded configuration  file=package.json ("build" field)
+  • executing @electron/rebuild  electronVersion=38.8.6 arch=x64 buildFromSource=false workspaceRoot=/vercel/sandbox/data/VOIDLINE projectDir=./ appDir=./
+  • installing native dependencies  arch=x64
+  • completed installing native dependencies
+  • packaging       platform=linux arch=x64 electron=38.8.6 appOutDir=dist/linux-unpacked
+  • downloaded      label=electron progress=100%
+  • downloaded electron zip extracted successfully  output=/vercel/sandbox/data/VOIDLINE/dist/linux-unpacked
+  • searching for node modules  pm=npm searchDir=/vercel/sandbox/data/VOIDLINE
+  • building        target=AppImage arch=x64 file=dist/VOIDLINE-0.10.1-Linux-x86_64.AppImage
+  • executing @electron/rebuild  electronVersion=38.8.6 arch=x64 buildFromSource=false workspaceRoot=/vercel/sandbox/data/VOIDLINE projectDir=./ appDir=./
+  • installing native dependencies  arch=x64
+  • downloaded      label=appimage-12.0.1.7z progress=100%
+  • downloaded      label=7zip-linux-x64.tar.gz progress=100%
+  • completed installing native dependencies
+  • packaging       platform=win32 arch=x64 electron=38.8.6 appOutDir=dist/win-unpacked
+  • downloaded      label=electron progress=100%
+  • downloaded electron zip extracted successfully  output=/vercel/sandbox/data/VOIDLINE/dist/win-unpacked
+  • searching for node modules  pm=npm searchDir=/vercel/sandbox/data/VOIDLINE
+  • updating asar integrity executable resource  executablePath=dist/win-unpacked/VOIDLINE.exe
+  • file signing skipped via signExecutable configuration  file=dist/win-unpacked/VOIDLINE.exe
+  • building embedded block map  file=dist/VOIDLINE-0.10.1-Linux-x86_64.AppImage
+  • building        target=nsis file=dist/VOIDLINE-0.10.1-Setup-x64.exe archs=x64 oneClick=false perMachine=false
+  • downloaded      label=nsis-3.0.4.1.7z progress=100%
+  • downloaded      label=nsis-resources-3.4.1.7z progress=100%
+  • uninstaller is not signed by electron-builder  reason=custom NSIS script is used

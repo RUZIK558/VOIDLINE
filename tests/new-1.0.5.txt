@@ -1,0 +1,19 @@
+✔ knife clips have finite smooth monotonic time samples and no excessive spin (4.776114ms)
+✔ butterfly only articulates free parts about Y pin axes, safe handle is held (0.581664ms)
+✔ karambit makes one directional finger-ring orbit, not centre-of-weapon Z propeller (0.397828ms)
+✔ attacks and inspection return the carrying hand to rest (0.470915ms)
+✔ phase easing preserves endpoints with gentle acceleration (0.201532ms)
+✔ ERR_FAILED -2 on first navigation is retried and recovers (1.037952ms)
+✔ superseded ERR_ABORTED only succeeds if the real UI is ready (0.257015ms)
+✔ persistent navigation failure is bounded and retains the cause (0.761148ms)
+✔ closed window stops startup retries (0.763435ms)
+✔ ready probe requires 200 plus the game document and rejects external URLs (21.743732ms)
+✔ 200 error/blank document is not a successful startup (3.952381ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 159.78095

@@ -1,0 +1,121 @@
+{
+  "name": "voidline-arena",
+  "version": "1.0.9",
+  "private": true,
+  "description": "VOIDLINE — VSAC server guard, VCAC integrity and deterministic knife state",
+  "main": "electron.cjs",
+  "type": "module",
+  "scripts": {
+    "start": "node tools/start.cjs",
+    "server": "node server.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "dist": "electron-builder --linux AppImage --win nsis portable --x64",
+    "build:linux-input": "node tools/build-linux-input.cjs",
+    "predist": "npm run build:linux-input && node tools/generate-vcac-manifest.cjs",
+    "build:audio": "python3 tools/generate-audio.py"
+  },
+  "dependencies": {
+    "selfsigned": "^2.4.1",
+    "three": "0.180.0",
+    "ws": "8.18.3"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "studio.voidline.arena",
+    "productName": "VOIDLINE",
+    "files": [
+      "electron.cjs",
+      "server.mjs",
+      "public/**/*",
+      "package.json",
+      "preload.cjs",
+      "host-controller.mjs",
+      "p2p.mjs",
+      "README.md",
+      "match.mjs",
+      "profile-store.mjs",
+      "settings-store.mjs",
+      "display-controller.mjs",
+      "build/native/**/*",
+      "net-session.mjs",
+      "peer-discovery.mjs",
+      "RELEASE-1.0-RU.md",
+      "QA-1.0-RU.md",
+      "linux-input.mjs",
+      "RELEASE-1.0.1-RU.md",
+      "RELEASE-1.0.2-RU.md",
+      "tactical-channel.mjs",
+      "RELEASE-1.0.5-RU.md",
+      "RELEASE-1.0.3-RU.md",
+      "startup.mjs",
+      "RELEASE-1.0.4-RU.md",
+      "RELEASE-1.0.6-RU.md",
+      "RELEASE-1.0.7-RU.md",
+      "vsac.mjs",
+      "vcac.mjs",
+      "vcac-manifest.json",
+      "RELEASE-1.0.8-RU.md",
+      "ANTICHEAT-RU.md",
+      "diagnostic-log.cjs",
+      "RELEASE-1.0.9-RU.md"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "signAndEditExecutable": true,
+      "artifactName": "VOIDLINE-${version}-Windows-x64.exe",
+      "icon": "build/icon.ico",
+      "signExecutable": false
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game",
+      "artifactName": "VOIDLINE-${version}-Linux-x86_64.AppImage",
+      "syncDesktopName": true,
+      "icon": "build/icon.png",
+      "executableName": "voidline-arena"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "asar": true,
+    "appImage": {
+      "license": "build/license.txt"
+    },
+    "directories": {
+      "buildResources": "build"
+    },
+    "nsis": {
+      "artifactName": "VOIDLINE-${version}-Setup-x64.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "deleteAppDataOnUninstall": false,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "script": "build/installer.nsi",
+      "installerLanguages": [
+        "ru_RU",
+        "en_US"
+      ]
+    },
+    "portable": {
+      "artifactName": "VOIDLINE-${version}-Windows-x64.${ext}"
+    },
+    "asarUnpack": [
+      "build/native/**/*"
+    ],
+    "afterPack": "tools/after-pack.cjs"
+  },
+  "author": "VOIDLINE contributors",
+  "license": "MIT",
+  "desktopName": "VOIDLINE"
+}

@@ -1,0 +1,521 @@
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,3 +1,12 @@
++## 1.0.4 — шарниры ножей и компактные метки
++
++- Бабочка: неподвижная безопасная рукоять, согласованные повороты свободной рукояти и лезвия вокруг Y-шарниров; лезвие помещается в закрытой рукояти.
++- Керамбит: обратный хват и один направленный оборот вокруг кольца пальца.
++- Кисть и нож связаны, четыре плавных клипа без накопления вращения при прерывании.
++- Метки: маленький ромб, расстояние и только необходимая высота; без имени и текста команды.
++- Текстовые команды: две строки на 3,2 секунды; обычные метки не дублируются в ленте.
++- Меню V без размытия, яркого свечения и длинной подсказки; серверная приватность не менялась.
++
+ ## 1.0.3 — метки и быстрые команды
+ 
+ - СКМ / короткое V: союзная метка под прицелом.
+--- /dev/null
++++ b/QA-1.0.4-RU.md
+@@ -0,0 +1,10 @@
++# Проверка VOIDLINE 1.0.4
++
++- Полный регрессионный прогон: tests/regression-1.0.4.txt.
++- Отдельные тесты фазы, оси и направления вращения, плавности и конечных поз: tests/knife-motion-104.test.mjs.
++- Браузерная проверка настоящих Three.js-моделей: tools/qa-v104-visual.cjs. Кисть — родитель ножа, безопасная рукоять неподвижна, центр кольца не описывает орбиту, четыре клипа возвращают кисть в исходную позу; 120 циклов прерывания на каждый нож без накопления смещения. Проверены конечные кадры, закрытая бабочка, обратный хват, промежуточные положения осмотра и удар. Кадры в previews/1.0.4-*.png.
++- Компактные метки проверяются по реальному DOM: без имён и длинного текста, не более двух строк команд; обычные метки не засоряют ленту. Меню снято при 1280×800 и 390×780.
++- Нативный Linux-клиент: tools/qa-v104-native.cjs; реальные XInput2/xdotool, V/СКМ, все шесть команд, отмена, чат, TTL, недоставка противнику, оба ножа — клавиши 3/F и обе кнопки мыши.
++- Готовый Linux-пакет проверяется отдельно, с нативным помощником из ASAR; байты игровых файлов сравниваются с исходниками в Linux и Windows. Целостность NSIS и AppImage проверяется перед передачей.
++
++Ограничения: Windows собирается, но её нативный запуск в Linux не проверяется. Linux QA использует Xvfb/X11 и программный GPU, не является тестом производительности или чистого Wayland. Анимации оригинальные стилизованные, не перенесённые ассеты сторонних игр. Баланс урона и карты не менялись.
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,7 @@
++## Обновление 1.0.4
++
++Бабочка и керамбит: исправлены оси вращения, крепление к кисти, вынимание, осмотр и удары. Метки упрощены до небольшого ромба и расстояния, без имён и длинных плашек; быстрые команды остаются в двухстрочной ленте. См. RELEASE-1.0.4-RU.md и QA-1.0.4-RU.md.
++
+ ## Обновление 1.0.3
+ 
+ СКМ / короткое V — метка союзникам. Удержание V — круговое меню быстрых команд; выбрать мышью или 1–6 и отпустить V. Клавиша настраивается. Сетевые метки и команды получают только союзники. Подробнее: RELEASE-1.0.3-RU.md. Все участники и сервер — версии 1.0.3.
+--- /dev/null
++++ b/RELEASE-1.0.4-RU.md
+@@ -0,0 +1,15 @@
++# VOIDLINE 1.0.4
++
++## Ножи
++- Бабочка: безопасная рукоять закреплена в кисти, лезвие и свободная рукоять вращаются вокруг настоящих осей шарниров. Вынимание из закрытого положения и осмотр «закрыть — раскрыть» вместо независимого вращения трёх деталей.
++- Керамбит: обратный хват; один направленный оборот вокруг кольца указательного пальца, а не вращение вокруг центра ножа. Размер кольца приведён к пальцу.
++- Оружие прикреплено к правой кисти: при вынимании, осмотре и обоих ударах рука и нож движутся вместе. Плавные разгон, замедление и возврат; прерывание анимации не накапливает поворот.
++- M9, урон, дальность и серверные задержки ударов не менялись.
++
++## Метки
++- Небольшой ромб и расстояние, без имени, длинной команды, плашки и свечения поверх карты. Для точек остаются A / B; стрелка высоты появляется только на другом уровне.
++- На мини-карте — такой же маленький ромб. Обычная метка больше не дублируется текстовым уведомлением.
++- Быстрые фразы — максимум две ненавязчивые строки на 3,2 секунды. Сигнал, командная приватность, 8 секунд жизни метки и защита от спама сохранены.
++- Меню V стало спокойнее: меньше затемнение, нет размытия и яркого свечения, короткая подсказка. Управление СКМ / V / 1–6 не изменилось.
++
++Для совместной игры рекомендуется одинаковая версия клиента и сервера — 1.0.4. Это самостоятельная стилизация, не копия ассетов CS2 или Standoff.
+--- a/electron.cjs
++++ b/electron.cjs
+@@ -41,7 +41,7 @@
+       minHeight: 700,
+       backgroundColor: "#0a1119",
+       autoHideMenuBar: true,
+-      title: "VOIDLINE / Stabilization 1.0.3",
++      title: "VOIDLINE / Stabilization 1.0.4",
+       webPreferences: {
+         preload: path.join(__dirname, "preload.cjs"),
+         nodeIntegration: false,
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "voidline-arena",
+-  "version": "1.0.3",
++  "version": "1.0.4",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "voidline-arena",
+-      "version": "1.0.3",
++      "version": "1.0.4",
+       "license": "MIT",
+       "dependencies": {
+         "selfsigned": "^2.4.1",
+@@ -708,8 +708,8 @@
+       }
+     },
+     "node_modules/@types/responselike": {
+-      "version": "1.0.3",
+-      "resolved": "https://registry.npmjs.org/@types/responselike/-/responselike-1.0.3.tgz",
++      "version": "1.0.4",
++      "resolved": "https://registry.npmjs.org/@types/responselike/-/responselike-1.0.4.tgz",
+       "integrity": "sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==",
+       "dev": true,
+       "license": "MIT",
+@@ -1309,8 +1309,8 @@
+       }
+     },
+     "node_modules/clone-response": {
+-      "version": "1.0.3",
+-      "resolved": "https://registry.npmjs.org/clone-response/-/clone-response-1.0.3.tgz",
++      "version": "1.0.4",
++      "resolved": "https://registry.npmjs.org/clone-response/-/clone-response-1.0.4.tgz",
+       "integrity": "sha512-ROoL94jJH2dUVML2Y/5PEDNaSHgeOdSDicUyS7izcF63G6sTc/FTjLub4b8Il9S8S0beOfYt0TaA5qvFK+w0wA==",
+       "dev": true,
+       "license": "MIT",
+@@ -1382,8 +1382,8 @@
+       "license": "MIT"
+     },
+     "node_modules/core-util-is": {
+-      "version": "1.0.3",
+-      "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.3.tgz",
++      "version": "1.0.4",
++      "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.4.tgz",
+       "integrity": "sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==",
+       "dev": true,
+       "license": "MIT"
+@@ -2444,7 +2444,7 @@
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+-        "has-symbols": "^1.0.3"
++        "has-symbols": "^1.0.4"
+       },
+       "engines": {
+         "node": ">= 0.4"
+@@ -2501,8 +2501,8 @@
+       }
+     },
+     "node_modules/http2-wrapper": {
+-      "version": "1.0.3",
+-      "resolved": "https://registry.npmjs.org/http2-wrapper/-/http2-wrapper-1.0.3.tgz",
++      "version": "1.0.4",
++      "resolved": "https://registry.npmjs.org/http2-wrapper/-/http2-wrapper-1.0.4.tgz",
+       "integrity": "sha512-V+23sDMr12Wnz7iTcDeJr3O6AIxlnvT/bmaAAAP/Xda35C90p9599p0F1eHR/N1KILWSoWVAiOMFjBBXaXSMxg==",
+       "dev": true,
+       "license": "MIT",
+--- a/package.json
++++ b/package.json
+@@ -1,8 +1,8 @@
+ {
+   "name": "voidline-arena",
+-  "version": "1.0.3",
++  "version": "1.0.4",
+   "private": true,
+-  "description": "VOIDLINE — team pings and quick-command wheel",
++  "description": "VOIDLINE — articulated knives and compact team pings",
+   "main": "electron.cjs",
+   "type": "module",
+   "scripts": {
+@@ -48,6 +48,7 @@
+       "RELEASE-1.0.1-RU.md",
+       "RELEASE-1.0.2-RU.md",
+       "tactical-channel.mjs",
++      "RELEASE-1.0.4-RU.md",
+       "RELEASE-1.0.3-RU.md"
+     ],
+     "win": {
+--- a/public/diagnostics.mjs
++++ b/public/diagnostics.mjs
+@@ -8,7 +8,7 @@
+   window.voidlineDiagnostics?.record(entry)?.catch(()=>{});
+  };
+  async function saveReport(){
+-  const text=JSON.stringify({version:'1.0.3',info:getInfo(),events:records},null,2),a=document.createElement('a');
++  const text=JSON.stringify({version:'1.0.4',info:getInfo(),events:records},null,2),a=document.createElement('a');
+   const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));a.href=url;a.download='VOIDLINE-diagnostics.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  async function safeReload(){
+--- a/public/game.mjs
++++ b/public/game.mjs
+@@ -79,7 +79,7 @@
+ const postFX = createPostFX(renderer);
+ let prefs = normalizeSettings(null),
+   inventoryUI;
+-const diagnostics=setupDiagnostics(()=>({version:'1.0.3',platform:navigator.platform,userAgent:navigator.userAgent,graphics:{shadows:prefs.shadows,renderScale:prefs.renderScale,aa:prefs.aa},gpu:{...renderer.info.memory}}));
++const diagnostics=setupDiagnostics(()=>({version:'1.0.4',platform:navigator.platform,userAgent:navigator.userAgent,graphics:{shadows:prefs.shadows,renderScale:prefs.renderScale,aa:prefs.aa},gpu:{...renderer.info.memory}}));
+ const down = (name) => actionDown(keys, prefs, name);
+ const scene = new THREE.Scene();
+ scene.background = new THREE.Color("#a7d5e5");
+--- a/public/index.html
++++ b/public/index.html
+@@ -3,7 +3,7 @@
+   <head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+-    <title>VOIDLINE — Stabilization 1.0.3</title>
++    <title>VOIDLINE — Stabilization 1.0.4</title>
+     <link rel="icon" type="image/svg+xml" href="assets/voidline.svg" />
+     <link rel="stylesheet" href="style.css" />
+   </head>
+@@ -13,7 +13,7 @@
+     <main id="menu" class="lobbyMenu">
+       <header class="lobbyTop">
+         <a class="lobbyLogo" href="#" aria-label="VOIDLINE">V/</a
+-        ><span class="edition">VOIDLINE<br /><small>FIX / 1.0.3</small></span>
++        ><span class="edition">VOIDLINE<br /><small>FIX / 1.0.4</small></span>
+         <nav aria-label="Разделы игры">
+           <button data-pane="arsenal">АРСЕНАЛ</button
+           ><button data-pane="inventory">ИНВЕНТАРЬ</button
+@@ -138,7 +138,7 @@
+         <p class="railFoot">P2P · TLS 1.3<br />Без центрального сервера</p>
+       </aside>
+       <footer class="lobbyFooter">
+-        <span>VOIDLINE / 1.0.3</span
++        <span>VOIDLINE / 1.0.4</span
+         ><span>Оригинальные модели и окружение · LAN / VPN</span>
+       </footer>
+     </main>
+--- /dev/null
++++ b/public/knife-motion.mjs
+@@ -0,0 +1,32 @@
++// Local hinge axes follow the authored X/Z blade plane: pin and ring axes are Y.
++// Smooth phase sampling avoids linear-key speed changes and Euler shortest-path reversal.
++export function easedTrack(path,times,values){
++ const ts=[],vs=[];
++ for(let i=0;i<times.length-1;i++){
++  const steps=Math.max(2,Math.ceil((times[i+1]-times[i])*90));
++  for(let n=0;n<steps;n++){const u=n/steps,s=u*u*(3-2*u);ts.push(times[i]+(times[i+1]-times[i])*u);vs.push(values[i]+(values[i+1]-values[i])*s);}
++ }
++ ts.push(times.at(-1));vs.push(values.at(-1));return [path,ts,vs];
++}
++const tr=(path,t,v)=>easedTrack(path,t,v),pi=Math.PI;
++export function knifeMotion(id){
++ if(!['butterfly','karambit'].includes(id))throw new Error('Unsupported articulated knife');
++ const carry=(times,x,y,z,rx,rz)=>[
++  tr('KnifeMotion.position[x]',times,x),tr('KnifeMotion.position[y]',times,y),tr('KnifeMotion.position[z]',times,z),
++  tr('R_Hand.rotation[x]',times,rx),tr('R_Hand.rotation[z]',times,rz)
++ ];
++ const inspect=carry([0,.18,.78,1],[0,-.055,-.055,0],[0,.075,.075,0],[0,-.045,-.045,0],[0,.16,.16,0],[0,-.12,-.12,0]);
++ const equip=carry([0,.42,.8,1],[.035,0,0,0],[-.30,.025,0,0],[.08,0,0,0],[-.6,.16,0,0],[.12,-.08,0,0]);
++ if(id==='butterfly'){
++  const t=[0,.12,.27,.43,.52,.70,.88,1];
++  inspect.push(tr('SwingPivot.rotation[y]',t,[0,0,-.08,-pi,-pi,-2*pi,-2*pi,-2*pi]),tr('BiteHandle.rotation[y]',t,[0,-pi,-pi,-pi,-pi,-pi,-2*pi,-2*pi]));
++  equip.push(tr('SwingPivot.rotation[y]',[0,.18,.62,.8,1],[pi,pi,0,0,0]),tr('BiteHandle.rotation[y]',[0,.18,.62,.9,1],[pi,pi,pi,0,0]));
++ }else{
++  // A single forward orbit about the index ring, not a propeller about the weapon centre.
++  inspect.push(tr('RingPivot.rotation[y]',[0,.2,.30,.69,.80,1],[0,0,-.16,-2*pi,-2*pi,-2*pi]));
++  equip.push(tr('RingPivot.rotation[y]',[0,.12,.70,.87,1],[pi,pi,0,0,0]));
++ }
++ const fire=carry([0,.22,.48,.74,1],[0,.035,-.28,-.12,0],[0,.035,.015,-.025,0],[0,.035,-.12,-.06,0],[0,.14,-.18,-.08,0],[0,.30,-.48,-.22,0]);
++ const heavy=carry([0,.26,.48,.72,1],[0,.055,-.045,-.02,0],[0,.035,-.025,-.015,0],[0,.12,-.32,-.16,0],[0,.28,-.22,-.08,0],[0,.12,-.16,-.07,0]);
++ return [{name:'inspect',duration:id==='butterfly'?2.45:1.85,tracks:inspect},{name:'equip',duration:id==='butterfly'?.82:.64,tracks:equip},{name:'fire',duration:.45,tracks:fire},{name:'heavy',duration:.85,tracks:heavy}];
++}
+--- a/public/knives.mjs
++++ b/public/knives.mjs
+@@ -1,5 +1,6 @@
+ import * as T from '/vendor/three.module.js';
+ import {clip} from './rigging.mjs';
++import {knifeMotion} from './knife-motion.mjs';
+ // Original procedural knife meshes. Metallic bevels, physical hinge pivots, no external models.
+ export function buildKnife(id){
+  const g=new T.Group();
+@@ -19,20 +20,23 @@
+  }
+  function pin(p,x,z){const m=add(p,new T.CylinderGeometry(.013,.013,.026,14),accent,x,0,z,'trim');return m;}
+  if(id==='butterfly'){
+-  const pivot=new T.Group();pivot.name='BladePivot';pivot.position.z=-.11;g.add(pivot);
+-  blade(pivot,[[-.024,0],[-.029,.19],[0,.39],[.034,.19],[.025,0]]);
++  const swing=new T.Group();swing.name='SwingPivot';swing.position.set(-.025,0,-.11);g.add(swing);
++  const pivot=new T.Group();pivot.name='BladePivot';pivot.position.x=.025;swing.add(pivot);
++  blade(pivot,[[-.021,0],[-.023,.12],[0,.233],[.026,.12],[.022,0]]);
+   for(const [name,x] of [['SafeHandle',-.025],['BiteHandle',.025]]){
+-   const h=new T.Group();h.name=name;h.position.set(x,0,-.11);g.add(h);
++   const h=new T.Group();h.name=name;if(name==='SafeHandle'){h.position.set(x,0,-.11);g.add(h);}else{h.position.x=.05;swing.add(h);}
+    for(const side of [-1,1]){box(h,0,side*.018,.115,.035,.012,.25,grip,'trim');for(let j=0;j<5;j++)box(h,0,side*.025,.04+j*.039,.016,.004,.016,accent);}
+    box(h,0,0,.235,.035,.04,.014,grip,'trim');pin(h,0,0);pin(h,0,.225);
+   }
+   box(g.getObjectByName('BiteHandle'),0,0,.255,.012,.035,.04,accent);
+  }else if(id==='karambit'){
+-  blade(g,[[-.025,.09],[-.075,.16],[-.10,.25],[-.08,.34],[-.015,.39],[.032,.39],[-.005,.34],[-.021,.28],[.012,.2],[.035,.12]]);
+-  box(g,.007,0,.006,.065,.04,.20,grip,'trim');
+-  for(let i=0;i<5;i++)box(g,.008,.023,-.06+i*.032,.062,.006,.009,accent);
+-  const ring=add(g,new T.TorusGeometry(.044,.011,10,36),edge,.006,0,.15);ring.rotation.x=Math.PI/2;
+-  pin(g,.007,-.062);pin(g,.007,.067);
++  blade(g,[[-.022,.055],[-.070,.10],[-.110,.18],[-.090,.26],[-.030,.29],[.010,.27],[-.028,.23],[-.025,.18],[.020,.12],[.028,.065]]);
++  box(g,.007,0,0,.056,.035,.13,grip,'trim');
++  for(let i=0;i<5;i++)box(g,.008,.020,-.043+i*.022,.054,.006,.008,accent);
++  const ring=add(g,new T.TorusGeometry(.022,.006,12,36),edge,.006,0,.09);ring.name='IndexRing';ring.rotation.x=Math.PI/2;
++  pin(g,.007,-.043);pin(g,.007,.043);
++  const body=new T.Group();body.name='KnifeBody';for(const child of [...g.children])body.add(child);body.position.set(-.006,0,-.09);
++  const spin=new T.Group();spin.name='RingPivot';spin.add(body);g.add(spin);
+  }else{
+   blade(g,[[-.035,.1],[-.039,.34],[-.018,.49],[.037,.37],[.038,.1]]);
+   box(g,0,0,-.1,.16,.025,.027,steel);box(g,0,0,.02,.059,.045,.22,grip,'trim');
+@@ -45,28 +49,37 @@
+  g.userData.factory={body:steel,trim:grip};g.userData.privateMaterials=[steel,grip,edge,accent];g.userData.kind=id;g.userData.skin='standard';g.userData.muzzle=new T.Vector3();
+  return g;
+ }
++function buildArticulatedView(id,hands){
++ const root=new T.Group(),motion=new T.Group(),weapon=buildKnife(id);motion.name='KnifeMotion';hands.name='KnifeHands';weapon.name='Knife';root.add(motion);motion.add(hands);
++ const hand=hands.getObjectByName('R_Hand');
++ if(!hand)throw new Error('Knife requires a right-hand grip bone');
++ // Both the glove and the held handle are carried by the same wrist, including strikes.
++ hand.add(weapon);
++ if(id==='butterfly'){weapon.position.set(.025,-.018,-.005);weapon.rotation.set(.28,-.12,-.35);}
++ else{weapon.position.set(-.0285,-.012,-.026);weapon.rotation.set(-.9,-.35,.15);weapon.scale.setScalar(.85);root.position.set(-.025,.07,0);}
++ const mixer=new T.AnimationMixer(root),actions={};
++ for(const c of knifeMotion(id)){const a=mixer.clipAction(clip(c.name,c.duration,c.tracks));a.setLoop(T.LoopOnce,1);a.clampWhenFinished=true;actions[c.name]=a;}
++ const rest=[];root.traverse(o=>rest.push([o,o.position.clone(),o.quaternion.clone(),o.scale.clone()]));
++ function restore(){for(const[o,p,q,s]of rest){o.position.copy(p);o.quaternion.copy(q);o.scale.copy(s);}}
++ root.userData.hands=hands;root.userData.weapon=weapon;root.userData.muzzle=new T.Vector3();
++ root.userData.animations={mixer,actions,play(name){if(!actions[name])return;for(const a of Object.values(actions))a.stop();restore();actions[name].reset().play();}};
++ return root;
++}
+ export function buildKnifeView(id,hands){
++ if(id==='butterfly'||id==='karambit')return buildArticulatedView(id,hands);
+  const root=new T.Group(),weapon=buildKnife(id);weapon.name='Knife';hands.name='KnifeHands';weapon.position.set(.22,-.20,-.49);weapon.rotation.set(.28,-.12,-.35);root.add(weapon,hands);
+- const extra=id==='butterfly'?[
+- ['SafeHandle.rotation[x]',[0,.17,.35,.55,.75,1],[0,Math.PI,Math.PI*2,Math.PI*3,Math.PI*2,0]],
+- ['BiteHandle.rotation[x]',[0,.2,.4,.65,.85,1],[0,-Math.PI,-Math.PI*2,-Math.PI,Math.PI,0]],
+- ['BladePivot.rotation[x]',[0,.23,.5,.75,1],[0,-Math.PI,0,Math.PI,0]]
+- ]:id==='karambit'?[
+- ['Knife.rotation[z]',[0,.15,.35,.55,.8,1],[-.22,-1.4,-Math.PI*2-.22,-Math.PI*4-.22,-Math.PI*4-.22,-Math.PI*4-.22]],
+- ['R_Hand.rotation[z]',[0,.15,.35,.55,.8,1],[0,.4,.8,.3,0,0]]
+- ]:[
++ const extra=[
+  ['Knife.rotation[y]',[0,.23,.5,.75,1],[0,1.15,1.15,-.7,0]],
+  ['Knife.rotation[z]',[0,.23,.5,.75,1],[-.22,-.6,-.6,.35,-.22]]
+  ];
+- const inspect=clip('inspect',id==='butterfly'?2.7:id==='karambit'?2.1:2.4,[
++ const inspect=clip('inspect',2.4,[
+  ['Knife.position[y]',[0,.18,.75,1],[-.20,-.06,-.06,-.20]],
+  ['Knife.position[x]',[0,.18,.75,1],[.22,.12,.12,.22]],
+  ['KnifeHands.position[y]',[0,.18,.75,1],[0,.14,.14,0]],['KnifeHands.position[x]',[0,.18,.75,1],[0,-.1,-.1,0]],...extra]);
+- const equip=clip('equip',id==='butterfly'?.85:.6,[
++ const equip=clip('equip',.6,[
+  ['Knife.position[y]',[0,.5,1],[-.65,-.12,-.20]],
+  ['Knife.rotation[x]',[0,.6,1],[-1.5,.45,.28]],
+- ['KnifeHands.position[y]',[0,.5,1],[-.45,.08,0]],
+- ...(id==='butterfly'?[['BiteHandle.rotation[x]',[0,.3,.7,1],[Math.PI,Math.PI*2,Math.PI,0]],['SafeHandle.rotation[x]',[0,.3,.7,1],[-Math.PI,0,Math.PI,0]]]:[])]);
++ ['KnifeHands.position[y]',[0,.5,1],[-.45,.08,0]]]);
+  const fire=clip('fire',.45,[
+  ['Knife.position[x]',[0,.3,.6,1],[.22,-.17,.05,.22]],
+  ['Knife.position[z]',[0,.3,.6,1],[-.49,-.75,-.64,-.49]],
+--- a/public/models.mjs
++++ b/public/models.mjs
+@@ -921,10 +921,10 @@
+     const side = node.userData.arm,
+       wrist =
+         side === "R"
+-          ? new THREE.Vector3(0.25, -0.29, -0.43)
++          ? (kind === "knife" ? new THREE.Vector3(.25,-.20,-.48) : new THREE.Vector3(0.25, -0.29, -0.43))
+           : kind === "rifle"
+             ? new THREE.Vector3(0.17, -0.28, -0.73)
+-            : new THREE.Vector3(0.17, -0.3, -0.46);
++            : kind === "knife" ? new THREE.Vector3(-.22,-.38,-.5) : new THREE.Vector3(0.17, -0.3, -0.46);
+     const hand = 1 - smooth(0.025, 0.11, v.distanceTo(wrist));
+     return [
+       [side + "_Arm", 1 - hand],
+--- a/public/style.css
++++ b/public/style.css
+@@ -2419,16 +2419,17 @@
+ .peerDiscovery{padding:12px 20px;border-top:1px solid #587077;max-height:180px;overflow:auto}.peerDiscovery small{display:block;margin:8px 0;color:#bbcdd4}#nearbyPeers{display:flex;flex-wrap:wrap;gap:8px;font-size:12px;color:#b9cad2}
+ 
+ #chatNotices{position:fixed;right:24px;top:110px;z-index:160;display:flex;flex-direction:column;gap:10px;width:min(360px,calc(100vw - 48px));pointer-events:none}#chatNotices .chatNotice{pointer-events:auto;display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:#112c35f5;border:1px solid #83d3ca;border-left:4px solid #83d3ca;padding:12px 16px;text-align:left;color:#e7f2f3;overflow-wrap:anywhere;box-shadow:0 6px 20px #0006}#chatNotices .chatNotice b{font-size:12px;color:#aff0df}#chatNotices .chatNotice span{font-size:13px;line-height:1.4}.hasUnread{outline:2px solid #e6b86d!important}#mouseBackend{display:block;color:#aac6c7;font-size:11px;line-height:1.5;margin:8px 0}
+-/* 1.0.3 / team pings and hold-to-select radio. Pointer Lock stays active. */
++/* 1.0.4 / compact allied pings. Shape + distance, never a floating chat card. */
+ #tacticalMarkers{position:fixed;inset:0;z-index:18;pointer-events:none;overflow:hidden}
+-.tacticalMarker{position:absolute;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);color:#b9ffe8;text-shadow:0 1px 4px #000;white-space:nowrap;font-size:11px}
+-.tacticalMarker[hidden]{display:none!important}.tacticalMarker i{font-style:normal;display:grid;place-items:center;width:30px;height:30px;border:2px solid #a6ffe2;border-radius:50%;background:#102b32db;font-weight:bold;font-size:14px;box-shadow:0 0 12px #8fffd73a}
+-.tacticalMarker span{margin-top:5px;padding:4px 7px;background:#0a202bde;border-radius:3px;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+-#tacticalFeed{position:fixed;right:24px;bottom:180px;z-index:26;pointer-events:none;max-width:min(370px,90vw);font-size:13px;color:#d1ffed;text-shadow:0 1px 3px #000}
+-#tacticalFeed p{margin:6px 0;padding:9px 12px;background:#102932ed;border-left:3px solid #9ff5d9;border-radius:2px;overflow-wrap:anywhere}#tacticalFeed b{color:#9ff5d9}#tacticalFeed .tacticalError{color:#f6ce9c;border-color:#eab572}
+-#tacticalWheel{position:fixed;inset:0;z-index:140;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#091b29ed,#06101865 75%);backdrop-filter:blur(2px);pointer-events:none}
++.tacticalMarker{position:absolute;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-100%);color:#b2e8de;text-shadow:0 1px 2px #07161b,0 0 3px #07161b;white-space:nowrap;font:600 11px/1.3 Arial,sans-serif}
++.tacticalMarker[hidden]{display:none!important}.tacticalMarker i{position:relative;font-style:normal;display:grid;place-items:center;width:20px;height:20px;font-size:12px;color:#c1f3e8}
++.tacticalMarker i::before{content:"";position:absolute;inset:2px;z-index:-1;transform:rotate(45deg);border:1.5px solid #a4e5d9;background:#112b32d9;border-radius:1px}
++.tacticalMarker span{margin-top:5px;padding:0;color:#d6e8e7;font-variant-numeric:tabular-nums}
++#tacticalFeed{position:fixed;right:24px;bottom:180px;z-index:26;pointer-events:none;max-width:min(300px,80vw);font:12px/1.5 Arial,sans-serif;color:#dceae7;text-shadow:0 1px 3px #000,0 0 5px #07161b}
++#tacticalFeed p{margin:3px 0;padding:0;overflow-wrap:anywhere}#tacticalFeed b{color:#9ccfc5;font-weight:normal}#tacticalFeed .tacticalError{color:#f6ce9c}
++#tacticalWheel{position:fixed;inset:0;z-index:140;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#091b2980,#06101815 75%);pointer-events:none}
+ .tacticalDial{position:relative;width:520px;height:360px;max-width:100vw;flex-shrink:0}.tacticalCenter{position:absolute;left:50%;top:50%;width:96px;height:96px;transform:translate(-50%,-50%);display:grid;place-items:center;border:1px solid #85b4b3;border-radius:50%;background:#0b252de8;color:#a3d8d3;font:11px monospace;letter-spacing:1px}
+-.tacticalChoice{position:absolute;transform:translate(-50%,-50%);width:164px;min-height:58px;display:grid;place-items:center;padding:10px 8px;text-align:center;font-size:13px;line-height:1.35;border:1px solid #527c84;background:#142f39f5;color:#d0e7e8;border-radius:8px;transition:background .08s,border-color .08s}
+-.tacticalChoice.selected{background:#9ff5d9;color:#10242a;border-color:#e0fff2;box-shadow:0 0 20px #9ff5d944;font-weight:bold}.tacticalCursor{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border:1px solid #fff;background:#94f1d0;border-radius:50%;box-shadow:0 0 8px #8fffd7;z-index:2}
++.tacticalChoice{position:absolute;transform:translate(-50%,-50%);width:164px;min-height:58px;display:grid;place-items:center;padding:10px 8px;text-align:center;font-size:13px;line-height:1.35;border:1px solid #527c84;background:#142f39f5;color:#d0e7e8;border-radius:2px;transition:background .08s,border-color .08s}
++.tacticalChoice.selected{background:#28515a;color:#d5fff3;border-color:#a4e5d9;font-weight:bold}.tacticalCursor{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border:1px solid #fff;background:#94f1d0;border-radius:50%;z-index:2}
+ .tacticalHelp{margin:4px 14px 0;text-align:center;color:#bbd6d8;font-size:12px;line-height:1.6}.tacticalWheelOpen #crosshair{visibility:hidden}
+ @media(max-height:560px){.tacticalDial{transform:scale(.82);margin:-25px 0}.tacticalHelp{margin-top:-12px}}@media(max-width:540px){.tacticalDial{transform:scale(.7);min-width:520px;margin:-45px -78px}.tacticalHelp{max-width:90vw}}
+--- a/public/tactical-ui.mjs
++++ b/public/tactical-ui.mjs
+@@ -9,23 +9,23 @@
+  const cursor=document.createElement('i');cursor.className='tacticalCursor';panel.append(cursor);
+  const help=document.createElement('p');help.className='tacticalHelp';help.textContent='Мышь или 1–6 · отпусти V для отправки · центр / Esc — отмена';wheel.append(panel,help);document.body.append(layer,feed,wheel);
+  const elements=new Map(),seen=new Set();let markers=[],messages=[],team=null;
+- function line(name,text,quiet=false){const row=document.createElement('p');row.className=quiet?'tacticalError':'';const b=document.createElement('b');b.textContent=name?name+' · ':'';row.append(b,document.createTextNode(text));feed.append(row);messages.push({row,until:getTime()+5500});while(messages.length>4)messages.shift().row.remove();}
++ function line(name,text,quiet=false){const row=document.createElement('p');row.className=quiet?'tacticalError':'';const b=document.createElement('b');b.textContent=name?name+' · ':'';row.append(b,document.createTextNode(text));feed.append(row);messages.push({row,until:getTime()+3200});while(messages.length>2)messages.shift().row.remove();}
+  function reset(){markers=[];for(const el of elements.values())el.remove();elements.clear();for(const m of messages)m.row.remove();messages=[];seen.clear();team=null;}
+  return {
+-  receive(packet,mine){if(packet.reset)reset();if(team!==null&&team!==packet.team)reset();team=packet.team;markers=(packet.markers||[]).filter(m=>m.team===team&&m.until>getTime());const e=packet.event;if(e&&!seen.has(e.id)){seen.add(e.id);if(seen.size>128)seen.delete(seen.values().next().value);line(e.name,e.text);onSound(e.senderId===mine);}},
++  receive(packet,mine){if(packet.reset)reset();if(team!==null&&team!==packet.team)reset();team=packet.team;markers=(packet.markers||[]).filter(m=>m.team===team&&m.until>getTime());const e=packet.event;if(e&&!seen.has(e.id)){seen.add(e.id);if(seen.size>128)seen.delete(seen.values().next().value);if(e.kind!=='ping')line(e.name,e.text);onSound(e.senderId===mine);}},
+   error(text){line('',text,true);},reset,
+   setTeam(value){if(team!==null&&team!==value)reset();team=value;},
+-  show(key='V'){wheel.hidden=false;center.textContent='СОЮЗНИКАМ';help.textContent=`Мышь или 1–6 · отпусти ${key} для отправки · центр / Esc — отмена`;this.select(null,0,0);},
++  show(key='V'){wheel.hidden=false;center.textContent='×';help.textContent=`Отпусти ${key} — отправить · Esc — отмена`;this.select(null,0,0);},
+   hide(){wheel.hidden=true;},
+-  select(index,x,y){buttons.forEach((b,i)=>{b.classList.toggle('selected',i===index);b.setAttribute('aria-current',i===index?'true':'false');});cursor.style.transform=`translate(${x}px,${y}px)`;center.textContent=index===null?'ОТМЕНА':QUICK_COMMANDS[index].short;},
++  select(index,x,y){buttons.forEach((b,i)=>{b.classList.toggle('selected',i===index);b.setAttribute('aria-current',i===index?'true':'false');});cursor.style.transform=`translate(${x}px,${y}px)`;center.textContent=index===null?'×':QUICK_COMMANDS[index].short;},
+   update(project,eye,visible=true){const now=getTime();markers=markers.filter(m=>m.until>now);const ids=new Set(markers.map(m=>m.id));for(const[id,el]of elements)if(!ids.has(id)){el.remove();elements.delete(id);}
+-   for(const m of markers){let el=elements.get(m.id);if(!el){el=document.createElement('div');el.className='tacticalMarker';el.dataset.id=m.id;const icon=document.createElement('i');icon.textContent=m.command?QUICK_COMMANDS.find(c=>c.id===m.command)?.short||'◇':'◇';const label=document.createElement('span');el.append(icon,label);elements.set(m.id,el);layer.append(el);}
++   for(const m of markers){let el=elements.get(m.id);if(!el){el=document.createElement('div');el.className='tacticalMarker';el.dataset.id=m.id;const icon=document.createElement('i');icon.textContent=m.command==='go_a'?'A':m.command==='go_b'?'B':m.command==='follow'?'›':m.command==='mid'?'•':'•';const label=document.createElement('span');el.append(icon,label);elements.set(m.id,el);layer.append(el);}
+     const p=project(m.pos);el.hidden=!visible||!p||p.z<0||p.z>1||p.x<0||p.x>innerWidth||p.y<0||p.y>innerHeight;
+-    if(!el.hidden){el.style.left=p.x+'px';el.style.top=p.y+'px';el.style.opacity=String(Math.min(1,(m.until-now)/900));const d=Math.round(Math.hypot(m.pos.x-eye.x,m.pos.y-eye.y,m.pos.z-eye.z)),h=m.pos.y-eye.y;el.lastChild.textContent=`${m.name} · ${m.text} · ${d} м${h>1.5?' ↑':h< -2?' ↓':''}`;}
++    if(!el.hidden){el.style.left=Math.max(22,Math.min(innerWidth-22,p.x))+'px';el.style.top=Math.max(44,Math.min(innerHeight-20,p.y))+'px';const nearAim=Math.hypot(p.x-innerWidth/2,p.y-innerHeight/2)<34;el.style.opacity=String(Math.min(nearAim?.45:1,(m.until-now)/900));const d=Math.round(Math.hypot(m.pos.x-eye.x,m.pos.y-eye.y,m.pos.z-eye.z)),h=m.pos.y-eye.y;el.lastChild.textContent=`${d} м${h>1.5?' ↑':h< -2?' ↓':''}`;}
+    }
+    messages=messages.filter(m=>{if(m.until<=now){m.row.remove();return false;}return true;});layer.hidden=!visible;feed.hidden=!visible;
+   },
+-  radar(ctx,scale){const now=getTime();for(const m of markers)if(m.until>now){const x=90+m.pos.x*scale,y=107+m.pos.z*scale;ctx.strokeStyle='#a6ffe2';ctx.fillStyle='#a6ffe2';ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.stroke();ctx.font='bold 9px Arial';ctx.fillText(m.command==='go_a'?'A':m.command==='go_b'?'B':'!',x+6,y+3);}},
++  radar(ctx,scale){const now=getTime();for(const m of markers)if(m.until>now){const x=90+m.pos.x*scale,y=107+m.pos.z*scale;ctx.strokeStyle='#a4e5d9';ctx.fillStyle='#142b32';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x,y-4);ctx.lineTo(x+4,y);ctx.lineTo(x,y+4);ctx.lineTo(x-4,y);ctx.closePath();ctx.fill();ctx.stroke();}},
+   diagnostics(){return {markers:markers.map(m=>({...m})),messages:messages.length,open:!wheel.hidden};}
+  };
+ }
+--- /dev/null
++++ b/tests/knife-motion-104.test.mjs
+@@ -0,0 +1,7 @@
++import {test} from 'node:test';import assert from 'node:assert/strict';
++import {knifeMotion,easedTrack} from '../public/knife-motion.mjs';
++test('knife clips have finite smooth monotonic time samples and no excessive spin',()=>{for(const id of ['butterfly','karambit'])for(const c of knifeMotion(id)){assert.ok(c.duration>0);assert.equal(new Set(c.tracks.map(t=>t[0])).size,c.tracks.length);for(const[p,t,v]of c.tracks){assert.equal(t.length,v.length);assert.equal(t[0],0);assert.equal(t.at(-1),1);for(let i=0;i<t.length;i++){assert.ok(Number.isFinite(v[i]));if(i)assert.ok(t[i]>t[i-1]);}assert.ok(Math.max(...v)-Math.min(...v)<=Math.PI*2+.001,p);}}});
++test('butterfly only articulates free parts about Y pin axes, safe handle is held',()=>{for(const c of knifeMotion('butterfly')){assert.ok(!c.tracks.some(([p])=>/SafeHandle|BladePivot|Knife\.rotation/.test(p)));for(const[p]of c.tracks.filter(([p])=>/SwingPivot|BiteHandle/.test(p)))assert.ok(p.endsWith('rotation[y]'));}const c=knifeMotion('butterfly')[0];for(const name of ['SwingPivot','BiteHandle']){const v=c.tracks.find(([p])=>p===name+'.rotation[y]')[2];assert.equal(v[0],0);assert.equal(v.at(-1),-Math.PI*2);for(let i=1;i<v.length;i++)assert.ok(v[i]<=v[i-1]+1e-8);}});
++test('karambit makes one directional finger-ring orbit, not centre-of-weapon Z propeller',()=>{const c=knifeMotion('karambit')[0],v=c.tracks.find(([p])=>p==='RingPivot.rotation[y]')[2];assert.equal(v.at(-1),-Math.PI*2);assert.ok(!c.tracks.some(([p])=>/Knife\.rotation|RingPivot.rotation\[[xz]\]/.test(p)));for(let i=1;i<v.length;i++)assert.ok(v[i]<=v[i-1]+1e-8);});
++test('attacks and inspection return the carrying hand to rest',()=>{for(const id of ['butterfly','karambit'])for(const c of knifeMotion(id))for(const[p,t,v]of c.tracks){if(!/Pivot|Handle/.test(p))assert.equal(v.at(-1),0,p);}});
++test('phase easing preserves endpoints with gentle acceleration',()=>{const[p,t,v]=easedTrack('test',[0,1],[0,1]);assert.equal(v[0],0);assert.equal(v.at(-1),1);assert.ok(v[1]<t[1]/10);assert.ok(1-v.at(-2)<(1-t.at(-2))/10);});
+--- /dev/null
++++ b/tools/check-package-1.0.4.cjs
+@@ -0,0 +1,8 @@
++const fs=require('fs'),assert=require('assert/strict');
++(async()=>{const asar=await import('@electron/asar'),out=[];
++const files=['public/knife-motion.mjs','public/knives.mjs','public/models.mjs','public/tactical.mjs','public/tactical-input.mjs','public/tactical-ui.mjs','tactical-channel.mjs','public/game.mjs','public/style.css','public/settings-schema.mjs','server.mjs','electron.cjs','public/index.html','public/diagnostics.mjs','RELEASE-1.0.4-RU.md','public/maps.mjs','public/shared.mjs','linux-input.mjs','preload.cjs','public/audio.mjs','public/assets/audio/manifest.json'];
++for(const id of Object.keys(JSON.parse(fs.readFileSync('public/assets/audio/manifest.json')).sounds))files.push('public/assets/audio/'+id+'.wav');
++for(const target of['linux-unpacked','win-unpacked']){const file='dist/'+target+'/resources/app.asar';for(const f of files)assert.ok(fs.readFileSync(f).equals(asar.extractFile(file,f)),target+' '+f);assert.equal(JSON.parse(asar.extractFile(file,'package.json')).version,'1.0.4');assert.ok(!asar.listPackage(file).some(s=>s.includes('/tools/qa-')));assert.ok(!asar.extractFile(file,'public/game.mjs').toString().includes('window.qa104'));out.push(target+': '+files.length+' files match source, including team channel, UI, maps, Linux input and all 47 samples; version 1.0.4; no injected QA hooks');}
++for(const f of['linux-raw-input','linux-launcher.sh'])assert.ok(fs.readFileSync('dist/linux-unpacked/resources/app.asar.unpacked/build/native/'+f).equals(fs.readFileSync('build/native/'+f)));
++assert.ok(fs.readFileSync('dist/linux-unpacked/voidline-arena').equals(fs.readFileSync('build/native/linux-launcher.sh')));out.push('Linux pre-launch wrapper and XInput2 helper match source');fs.writeFileSync('tests/package-integrity-1.0.4.txt',out.join('\n')+'\n');console.log(out.join('\n'));
++})().catch(e=>{console.error(e);process.exit(1)});
+--- /dev/null
++++ b/tools/qa-v104-native.cjs
+@@ -0,0 +1,38 @@
++const {_electron:electron}=require('playwright'),fs=require('fs'),path=require('path'),assert=require('assert/strict'),{execFileSync}=require('child_process'),{WebSocket}=require('ws');
++const ROOT=path.resolve(__dirname,'..'),env={...process.env,DISPLAY:':97',XDG_SESSION_TYPE:'wayland',WAYLAND_DISPLAY:'qa-unavailable'};
++(async()=>{
++ const app=await electron.launch({executablePath:ROOT+'/node_modules/electron/dist/electron',args:[ROOT,'--ozone-platform=x11','--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--user-data-dir=/data/voidline-qa-104-'+Date.now()],env,timeout:60000});
++ let p,ally,enemy;const errors=[],results=[];const pass=s=>{console.log('PASS',s);results.push('PASS '+s);};
++ const hook=`\nwindow.qa104={knife:(id)=>getView(id),setKnife:(id)=>{prefs.knifeModel=id;},state:()=>({me,yaw,pitch,nativeMouse,locked:hasGameControl(),url:socket?.url,hold:tacticalHold.pressed,open:tacticalHold.isOpen,selected:tacticalHold.selected,hud:tacticalHUD.diagnostics()}),aim:(y,p)=>{yaw=y;pitch=p;sendInput();}};`;
++ async function joinPeer(url,team,name){const w=new WebSocket(url);w.messages=[];w.on('message',raw=>w.messages.push(JSON.parse(raw)));await new Promise((r,j)=>{w.once('open',r);w.once('error',j);});w.send(JSON.stringify({type:'join',team,name}));for(let i=0;i<150&&!w.messages.some(m=>m.type==='welcome');i++)await new Promise(r=>setTimeout(r,20));assert.ok(w.messages.some(m=>m.type==='welcome'));return w;}
++ try{
++ p=await app.firstWindow();p.setDefaultTimeout(60000);p.on('pageerror',e=>errors.push(e.stack));await p.waitForLoadState('load');await p.waitForFunction(()=>document.getElementById('scanPeers'));await p.waitForTimeout(400);
++ await p.route('**/game.mjs',r=>r.fulfill({contentType:'text/javascript',body:fs.readFileSync(ROOT+'/public/game.mjs','utf8')+hook}));
++ await p.evaluate(async()=>{await window.voidlineSettings.invoke('save',{frameCap:60,renderScale:.5,renderResolution:'1280x720',shadows:'off',aa:'off'});});await p.reload();await p.waitForFunction(()=>window.qa104);
++ await p.evaluate(()=>{window.qaPackets=[];window.qaOutgoing=[];const Base=WebSocket;window.WebSocket=class extends Base{constructor(...a){super(...a);this.addEventListener('message',e=>{try{qaPackets.push(JSON.parse(e.data));}catch{}});}send(data){try{const m=JSON.parse(data);if(m.type==='tactical'||m.type==='input'){qaOutgoing.push(m);if(qaOutgoing.length>800)qaOutgoing.shift();}}catch{}return super.send(data);}};});
++ await p.locator('#createOpen').click();await p.locator('#botsA').selectOption('0');await p.locator('#botsB').selectOption('0');await p.locator('#createPlay').click();await p.locator('[data-team=T]').click();await p.waitForFunction(()=>qa104.state().me?.alive);
++ const url=await p.evaluate(()=>qa104.state().url);ally=await joinPeer(url,'T','ALLY');enemy=await joinPeer(url,'CT','ENEMY');
++ if(!await p.evaluate(()=>qa104.state().locked)){await p.waitForTimeout(1400);await p.locator('#resume').click();}await p.waitForFunction(()=>qa104.state().nativeMouse);await p.evaluate(()=>qa104.aim(0,0));
++ const count=()=>p.evaluate(()=>qaPackets.filter(m=>m.type==='tactical').length);
++ let before=await count();await p.keyboard.down('KeyV');await p.waitForTimeout(60);await p.keyboard.up('KeyV');await p.waitForFunction(n=>qaPackets.filter(m=>m.type==='tactical').length===n+1,before);assert.equal(await p.evaluate(()=>qaPackets.filter(m=>m.type==='tactical').at(-1).event.kind),'ping');assert.equal(await p.locator('#tacticalWheel').isVisible(),false);pass('Tap V sends exactly one real server ping and does not open the command wheel');
++ await p.waitForFunction(()=>qa104.state().hud.markers.length===1);await p.waitForTimeout(80);assert.ok(ally.messages.some(m=>m.type==='tactical'));assert.equal(enemy.messages.some(m=>m.type==='tactical'),false);pass('Ally receives real ping; enemy receives neither marker nor radio event');
++ await p.waitForTimeout(950);before=await count();await p.mouse.click(640,400,{button:'middle'});await p.waitForFunction(n=>qaPackets.filter(m=>m.type==='tactical').length===n+1,before);assert.equal(await p.evaluate(()=>qa104.state().hud.markers.length),1);pass('Middle mouse places a ping without firing and replaces the previous own marker');
++ await p.waitForTimeout(950);await p.keyboard.down('KeyV');await p.waitForFunction(()=>qa104.state().open);const yawBefore=await p.evaluate(()=>qa104.state().yaw);execFileSync('xdotool',['mousemove_relative','--','165','-80'],{env});await p.waitForFunction(()=>qa104.state().selected===1);assert.equal(await p.evaluate(()=>qa104.state().yaw),yawBefore);assert.equal(await p.evaluate(()=>qa104.state().nativeMouse),true);await p.keyboard.press('KeyW');await p.mouse.click(640,400,{button:'left'});const input=await p.evaluate(()=>qaOutgoing.filter(m=>m.type==='input').at(-1));assert.equal(input.forward,0);assert.equal(input.fire,false);await p.screenshot({path:ROOT+'/previews/1.0.4-command-wheel.png'});before=await count();await p.keyboard.up('KeyV');await p.waitForFunction(n=>qaPackets.filter(m=>m.type==='tactical').length===n+1,before);assert.equal(await p.evaluate(()=>qaPackets.filter(m=>m.type==='tactical').at(-1).event.command),'go_a');pass('Held V opens six phrases; native relative mouse selects A without camera motion, movement or firing');
++ const yawAfter=await p.evaluate(()=>qa104.state().yaw);execFileSync('xdotool',['mousemove_relative','--','80','0'],{env});await p.waitForFunction(y=>qa104.state().yaw!==y,yawAfter);pass('Releasing V commits selected command and immediately restores normal unlimited mouse aiming');
++ await p.waitForTimeout(950);await p.keyboard.down('KeyV');await p.waitForFunction(()=>qa104.state().open);before=await count();await p.keyboard.up('KeyV');await p.waitForTimeout(150);assert.equal(await count(),before);pass('Release in the dead zone cancels without a ping or command');
++ const ids=['go_b','go_a','follow','mid','quiet','curse'];for(let i=0;i<6;i++){await p.waitForTimeout(950);await p.keyboard.down('KeyV');await p.waitForFunction(()=>qa104.state().open);await p.keyboard.press('Digit'+(i+1));before=await count();await p.keyboard.up('KeyV');await p.waitForFunction(n=>qaPackets.filter(m=>m.type==='tactical').length===n+1,before);assert.equal(await p.evaluate(()=>qaPackets.filter(m=>m.type==='tactical').at(-1).event.command),ids[i]);}pass('All six real quick commands select by 1–6 and send on V release, including the exact requested phrase');assert.equal(enemy.messages.some(m=>m.type==='tactical'),false);
++ await p.keyboard.press('Digit3');await p.waitForFunction(()=>qa104.state().me?.weapon==='butterfly');await p.waitForTimeout(900);
++ for(const id of ['butterfly','karambit']){
++  await p.evaluate(id=>qa104.setKnife(id),id);await p.keyboard.press('Digit2');await p.keyboard.press('Digit3');await p.waitForFunction(id=>qa104.state().me.weapon===id,id);await p.waitForTimeout(900);
++  await p.keyboard.press('KeyF');await p.waitForFunction(id=>qa104.knife(id).userData.animations.actions.inspect.isRunning(),id);await p.waitForFunction(id=>qa104.knife(id).userData.weapon.getObjectByName(id==='butterfly'?'SwingPivot':'RingPivot').rotation.y<-.1,id);
++  const pose=await p.evaluate(id=>{const v=qa104.knife(id),w=v.userData.weapon;return {attached:w.parent.name==='R_Hand',rot:w.getObjectByName(id==='butterfly'?'SwingPivot':'RingPivot').rotation.y};},id);assert.equal(pose.attached,true);assert.ok(pose.rot<0);
++  await p.mouse.down({button:'left'});await p.waitForFunction(id=>qa104.knife(id).userData.animations.actions.fire.isRunning(),id);await p.mouse.up({button:'left'});await p.waitForTimeout(650);
++  await p.mouse.down({button:'right'});await p.waitForFunction(id=>qa104.knife(id).userData.animations.actions.heavy.isRunning(),id);await p.mouse.up({button:'right'});await p.waitForTimeout(1000);
++  pass(id+': actual Digit3, F inspect, primary and secondary attacks animate a wrist-attached knife without errors');
++ }
++ await p.keyboard.down('KeyV');await p.waitForFunction(()=>qa104.state().open);before=await count();await p.keyboard.press('Escape');await p.keyboard.up('KeyV');await p.waitForTimeout(250);assert.equal(await count(),before);assert.equal(await p.locator('#tacticalWheel').isVisible(),false);pass('Esc cancels held radio without accidental ping and releases native capture');
++ await p.locator('#chatToggle').evaluate(b=>b.click());before=await count();await p.locator('#matchChatText').fill('V — обычный текст');await p.keyboard.press('KeyV');await p.waitForTimeout(320);assert.equal(await count(),before);assert.equal(await p.locator('#tacticalWheel').isVisible(),false);pass('Typing V in chat cannot place a marker or open quick commands');
++ await p.waitForTimeout(8300);assert.equal(await p.evaluate(()=>qa104.state().hud.markers.length),0);pass('World/radar markers expire and are removed instead of accumulating');
++ assert.deepEqual(errors,[]);assert.equal(await p.locator('#fatal').isVisible(),false);pass('No page errors or fatal overlay in Linux Electron');fs.writeFileSync(ROOT+'/tests/native-1.0.4.txt',results.join('\n')+'\n');
++ }catch(e){if(p){await p.screenshot({path:'/data/qa104-failure.png'});fs.writeFileSync('/data/qa104-failure.json',JSON.stringify(await p.evaluate(()=>({state:window.qa104?.state(),packets:window.qaPackets?.filter(m=>m.type!=='state').slice(-12)})),null,2));}throw e;}finally{ally?.terminate();enemy?.terminate();await app.close();}process.exit(0);
++})().catch(e=>{console.error(e);process.exit(1)});
+--- /dev/null
++++ b/tools/qa-v104-package.cjs
+@@ -0,0 +1,23 @@
++const {_electron:electron}=require('playwright'),path=require('path'),fs=require('fs'),assert=require('assert/strict'),{execFileSync}=require('child_process');
++const ROOT=path.resolve(__dirname,'..'),env={...process.env,DISPLAY:':97',XDG_SESSION_TYPE:'wayland',WAYLAND_DISPLAY:'qa-no-wayland'};
++(async()=>{const app=await electron.launch({executablePath:ROOT+'/dist/linux-unpacked/voidline-arena',args:['--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--user-data-dir=/data/voidline-packaged-qa-104-'+Date.now()],env,timeout:60000});const results=[],errors=[];let p;
++ try{
++ p=await app.firstWindow();p.setDefaultTimeout(60000);p.on('pageerror',e=>errors.push(e.stack));await p.waitForLoadState('load');await p.waitForFunction(()=>document.getElementById('scanPeers'));
++ const info=await app.evaluate(({app})=>({version:app.getVersion(),packaged:app.isPackaged,ozone:app.commandLine.getSwitchValue('ozone-platform')}));assert.deepEqual(info,{version:'1.0.4',packaged:true,ozone:'x11'});results.push('Packaged Linux launcher selects X11 before startup with both DISPLAY and WAYLAND_DISPLAY');
++ await p.evaluate(async()=>{await window.voidlineSettings.invoke('save',{frameCap:60,renderScale:.4,renderResolution:'1280x720',shadows:'off',aa:'off'});});await p.reload();await p.waitForLoadState('load');await p.waitForFunction(()=>document.getElementById('scanPeers'));
++ await p.evaluate(()=>{window.qaRadio=[];const WS=WebSocket;window.WebSocket=class extends WS{constructor(...a){super(...a);this.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.type==='tactical')window.qaRadio.push(m);if(m.type==='welcome')window.qaId=m.id;if(m.type==='state')window.qaState=m;});}};});
++ await p.locator('#createOpen').click();await p.locator('#botsA').selectOption('0');await p.locator('#botsB').selectOption('0');await p.locator('#createPlay').click();await p.locator('[data-team=T]').click();await p.waitForFunction(()=>window.qaState?.players.some(p=>p.id===window.qaId));
++ if(!await p.evaluate(()=>!!document.pointerLockElement)){await p.waitForTimeout(1400);await p.locator('#resume').click();}
++ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].focus());await p.waitForFunction(()=>document.getElementById('mouseBackend').textContent.includes('XInput2'));await p.waitForTimeout(250);results.push('Packaged ASAR starts its unpacked native XInput2 helper');
++ const readings=[];for(let i=0;i<4;i++){const before=await p.evaluate(()=>qaState.players.find(p=>p.id===qaId).yaw);execFileSync('xdotool',['mousemove_relative','--','900','0'],{env});await p.waitForFunction(before=>qaState.players.find(p=>p.id===qaId).yaw!==before,before,{timeout:12000});readings.push(await p.evaluate(()=>qaState.players.find(p=>p.id===qaId).yaw));}
++ results.push('Packaged native deltas reach the authoritative server across four beyond-screen motions');
++ await p.keyboard.down('KeyV');await p.waitForTimeout(60);await p.keyboard.up('KeyV');await p.waitForFunction(()=>qaRadio.some(m=>m.event.kind==='ping'));await p.waitForSelector('.tacticalMarker:not([hidden])');results.push('Packaged client: short V places a server-authenticated world/radar marker');
++ await p.waitForTimeout(1000);await p.keyboard.down('KeyV');await p.waitForSelector('#tacticalWheel:not([hidden])');const oldYaw=await p.evaluate(()=>qaState.players.find(p=>p.id===qaId).yaw);execFileSync('xdotool',['mousemove_relative','--','165','-80'],{env});await p.waitForSelector('.tacticalChoice[data-index="1"].selected');await p.waitForTimeout(120);assert.equal(await p.evaluate(()=>qaState.players.find(p=>p.id===qaId).yaw),oldYaw);await p.keyboard.press('Digit1');await p.keyboard.up('KeyV');await p.waitForFunction(()=>qaRadio.some(m=>m.event.command==='go_b'));assert.equal(await p.locator('#tacticalWheel').isVisible(),false);results.push('Packaged client: held V redirects Linux native motion to selection without aim movement; release sends Go B');
++ await p.keyboard.press('Digit3');await p.waitForFunction(()=>qaState.players.find(p=>p.id===qaId).weapon==='butterfly');await p.keyboard.press('KeyF');await p.waitForTimeout(400);
++ const models=await p.evaluate(async()=>{const {buildViewModel}=await import('/models.mjs');return ['butterfly','karambit'].map(id=>{const v=buildViewModel(id),w=v.userData.weapon,a=v.userData.animations;a.play('inspect');a.mixer.update(.9);v.updateMatrixWorld(true);const pivot=w.getObjectByName(id==='butterfly'?'SwingPivot':'RingPivot');return {id,attached:w.parent.name==='R_Hand',axisY:pivot.rotation.y,clips:Object.keys(a.actions)};});});for(const m of models){assert.equal(m.attached,true);assert.ok(m.axisY<0);assert.deepEqual(m.clips,['inspect','equip','fire','heavy']);}results.push('Both articulated knives load from the actual package, grip the hand and rotate on Y pins/ring; Digit3/F do not fail');
++ const label=await p.evaluate(()=>[...document.querySelectorAll('.tacticalMarker span')].map(e=>e.textContent));assert.ok(label.every(t=>/^\d+ м[ ↑↓]*$/.test(t)));results.push('Packaged markers contain distance only, without name/command cards');
++ await p.keyboard.press('Escape');await p.waitForFunction(()=>!document.pointerLockElement);assert.deepEqual(errors,[]);assert.equal(await p.locator('#fatal').isVisible(),false);results.push('Esc releases capture; no page errors in packaged client');
++ const packaged=await p.evaluate(async()=>{const {MAPS}=await import('/maps.mjs');const {SOUND_IDS,createGameAudio}=await import('/audio.mjs');const audio=createGameAudio({getVolume:()=>0});audio.init();await audio.preload();const loaded=audio.stats().loaded;await audio.dispose();return {maps:Object.values(MAPS).map(m=>({id:m.id,structures:m.structures.length})),sounds:SOUND_IDS.length,loaded};});assert.equal(packaged.maps.length,8);assert.ok(packaged.maps.every(m=>m.structures===2));assert.equal(packaged.sounds,47);assert.equal(packaged.loaded,47);results.push('Packaged client serves all eight new multilevel maps and decodes all 47 bundled sound samples');
++ fs.writeFileSync(ROOT+'/tests/packaged-linux-1.0.4.txt',results.map(s=>s+' PASS').join('\n')+'\n');console.log(results.join('\n'));
++ }catch(e){if(p){await p.screenshot({path:'/data/package104-failure.png'});console.error(await p.locator('#mouseBackend').textContent());}throw e;}finally{await app.close();}process.exit(0);
++})().catch(e=>{console.error(e);process.exit(1)});
+--- /dev/null
++++ b/tools/qa-v104-visual.cjs
+@@ -0,0 +1,18 @@
++const {chromium}=require('playwright'),assert=require('assert/strict'),fs=require('fs'),path=require('path');const ROOT=path.resolve(__dirname,'..');
++(async()=>{const {startServer}=await import('../server.mjs'),server=await startServer({port:3194,host:'127.0.0.1'});const browser=await chromium.launch({executablePath:'/usr/local/bin/chromium',headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader']});const results=[];const pass=s=>{results.push('PASS '+s);console.log('PASS '+s);};try{const p=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];p.on('pageerror',e=>errors.push(e.stack));await p.route('**/game.mjs',r=>r.fulfill({body:'',contentType:'text/javascript'}));await p.goto('http://127.0.0.1:3194');
++await p.evaluate(async()=>{
++ const T=await import('/vendor/three.module.js'),{buildViewModel}=await import('/models.mjs'),{createMapWorld}=await import('/map-world.mjs'),{getMap}=await import('/maps.mjs'),{createTacticalHUD}=await import('/tactical-ui.mjs');
++ const renderer=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(1);renderer.autoClear=false;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
++ const world=new T.Scene();world.background=new T.Color('#b5c8cd');world.add(createMapWorld(getMap('terminal')).root);world.add(new T.HemisphereLight('#ffffff','#77746d',2.2));const sun=new T.DirectionalLight('#fff4e2',2);sun.position.set(-20,40,20);world.add(sun);const cam=new T.PerspectiveCamera(75,innerWidth/innerHeight,.1,400);cam.position.set(0,1.65,32);cam.lookAt(0,1.65,0);
++ const scene=new T.Scene();scene.add(new T.HemisphereLight('#def6ff','#4b4140',3));const key=new T.DirectionalLight('#fff1db',3);key.position.set(-2,4,3);scene.add(key);const vc=new T.PerspectiveCamera(65,innerWidth/innerHeight,.01,10);document.body.replaceChildren(renderer.domElement);const views={};for(const id of ['butterfly','karambit','m9']){views[id]=buildViewModel(id);scene.add(views[id]);}
++ const hud=createTacticalHUD();let now=Date.now();const packet={team:0,markers:[{id:'one',team:0,pos:{x:-7,y:1.1,z:0},name:'THIS NAME MUST NEVER BE IN WORLD LABEL',text:'A VERY LONG COMMAND MUST NOT APPEAR',command:'go_a',until:now+800000},{id:'two',team:0,pos:{x:9,y:4,z:-7},name:'OTHER',text:'Follow me',command:'follow',until:now+800000}]};hud.receive(packet,'me');
++ window.qa104={T,views,hud,draw(id,action,time){for(const[k,v]of Object.entries(views)){v.visible=k===id;for(const a of Object.values(v.userData.animations.actions))a.stop();}const v=views[id];v.userData.animations.play(action==='idle'?'inspect':action);if(action==='idle'){for(const a of Object.values(v.userData.animations.actions))a.stop();}else v.userData.animations.mixer.update(time);renderer.clear();renderer.render(world,cam);renderer.clearDepth();renderer.render(scene,vc);hud.update(pos=>{const a=new T.Vector3(pos.x,pos.y,pos.z).project(cam);return {x:(a.x+1)/2*innerWidth,y:(1-a.y)/2*innerHeight,z:a.z};},cam.position,true);return v;},resize(w,h){renderer.setSize(w,h);cam.aspect=vc.aspect=w/h;cam.updateProjectionMatrix();vc.updateProjectionMatrix();}};
++ await new Promise(r=>setTimeout(r,650));
++});
++const checks=await p.evaluate(()=>{const {T,views}=qa104,checks=[];const assert=(v,msg)=>{if(!v)throw Error(msg);};const vec=o=>o.getWorldPosition(new T.Vector3());for(const id of ['butterfly','karambit']){const v=views[id],w=v.userData.weapon,a=v.userData.animations,hand=v.userData.hands.getObjectByName('R_Hand');assert(w.parent===hand,'not attached '+id);for(const action of ['inspect','equip','fire','heavy']){a.play(action);let prior=null,maxStep=0;for(let i=0;i<=180;i++){a.mixer.update(a.actions[action].getClip().duration/180);v.updateMatrixWorld(true);const q=w.getWorldQuaternion(new T.Quaternion());if(prior)maxStep=Math.max(maxStep,q.angleTo(prior));prior=q;assert(Number.isFinite(vec(w).length()),'non-finite transform');if(id==='butterfly'){assert(new T.Vector3().setFromEuler(w.getObjectByName('SafeHandle').rotation).length()<1e-10,'held handle moves');}else{const pivot=w.getObjectByName('RingPivot');const offset=vec(pivot).distanceTo(vec(w));assert(offset<1e-8,'ring centre orbits instead of spinning');}}assert(maxStep<.25,'weapon jump '+maxStep);const motion=v.getObjectByName('KnifeMotion');assert(motion.position.length()<1e-7,'nonzero endpoint');assert(Math.abs(hand.rotation.x)+Math.abs(hand.rotation.z)<1e-7,'hand endpoint');}for(let i=0;i<120;i++){a.play('inspect');a.mixer.update(.5);a.play('fire');a.mixer.update(.12);a.play('equip');a.mixer.update(1);}assert(v.getObjectByName('KnifeMotion').position.length()<1e-7,'interrupt drift');checks.push(id+': attached grip, fixed pin/ring, four clips, 120 interruption cycles without drift');}return checks;});checks.forEach(pass);
++for(const[id,action,time,label]of [['butterfly','idle',0,'idle'],['butterfly','inspect',.9,'fold'],['butterfly','inspect',1.17,'closed'],['butterfly','inspect',1.9,'catch'],['karambit','idle',0,'idle'],['karambit','inspect',.88,'spin'],['karambit','inspect',1.4,'catch'],['karambit','fire',.2,'slash']]){await p.evaluate(([i,a,t])=>{qa104.draw(i,a,t);return null;},[id,action,time]);await p.screenshot({path:ROOT+`/previews/1.0.4-${id}-${label}.png`});}
++const compact=await p.evaluate(()=>[...document.querySelectorAll('.tacticalMarker')].map(e=>({text:e.textContent,w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,visible:!e.hidden})));assert.equal(compact.length,2);for(const e of compact){assert.ok(e.w<65&&e.h<50);assert.ok(!/NAME|COMMAND|OTHER|Follow/.test(e.text));}pass('World markers are compact symbol + distance, no sender name or command text');
++await p.evaluate(()=>{const h=qa104.hud;h.receive({team:0,markers:[],event:{id:'ping',kind:'ping',senderId:'me',name:'P',text:'Метка'}},'me');});assert.equal(await p.locator('#tacticalFeed p').count(),0);for(let i=0;i<5;i++)await p.evaluate(i=>qa104.hud.receive({team:0,markers:[],event:{id:'e'+i,kind:'command',senderId:'ally',name:'ALLY',text:'Идём Б!'}},'me'),i);assert.equal(await p.locator('#tacticalFeed p').count(),2);pass('Ordinary pings do not create feed noise; quick commands capped at two compact lines');
++await p.evaluate(()=>{qa104.draw('butterfly','idle',0);qa104.hud.show();qa104.hud.select(1,140,-80);});await p.screenshot({path:ROOT+'/previews/1.0.4-commands.png'});
++await p.setViewportSize({width:390,height:780});await p.evaluate(()=>{qa104.resize(390,780);qa104.draw('karambit','idle',0);});await p.screenshot({path:ROOT+'/previews/1.0.4-commands-mobile.png'});const overflow=await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth);assert.equal(overflow,false);pass('Command menu renders at 1280x800 and 390x780 without horizontal overflow');
++assert.deepEqual(errors,[]);pass('No page errors in model, scene, HUD and animation checks');fs.writeFileSync(ROOT+'/tests/visual-1.0.4.txt',results.join('\n')+'\n');await p.close();}finally{await browser.close();server.close();}process.exit(0);})().catch(e=>{console.error(e);process.exit(1)});

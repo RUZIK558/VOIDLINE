@@ -1,0 +1,7 @@
+const fs=require('node:fs'),path=require('node:path'),{createHash}=require('node:crypto');
+const root=path.resolve(__dirname,'..'),pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'))),files=[];
+function digest(name,bytes){if(name==='package.json'){const p=JSON.parse(bytes);bytes=JSON.stringify({name:p.name,version:p.version,type:p.type,main:p.main,dependencies:Object.fromEntries(Object.entries(p.dependencies||{}).sort())});}return createHash('sha256').update(bytes).digest('hex');}
+function add(name){const p=path.join(root,name),st=fs.lstatSync(p);if(st.isSymbolicLink())throw Error('No symlinks in integrity input: '+name);if(st.isDirectory())for(const n of fs.readdirSync(p).sort())add(name+'/'+n);else if(st.isFile())files.push({path:name,sha256:digest(name,fs.readFileSync(p))});}
+for(const f of pkg.build.files)if(!f.includes('/')&&/\.(mjs|cjs|json)$/.test(f)&&f!=='vcac-manifest.json')add(f);
+add('public');add('build/native/linux-raw-input');add('build/native/linux-launcher.sh');for(const n of ['node_modules/three/build/three.module.js','node_modules/three/build/three.core.js','node_modules/ws/index.js','node_modules/ws/wrapper.mjs','node_modules/ws/lib'])add(n);
+const unique=[...new Map(files.map(f=>[f.path,f])).values()].sort((a,b)=>a.path.localeCompare(b.path));fs.writeFileSync(path.join(root,'vcac-manifest.json'),JSON.stringify({format:1,build:pkg.version,files:unique},null,2)+'\n');console.log('VCAC manifest: '+unique.length+' application files');

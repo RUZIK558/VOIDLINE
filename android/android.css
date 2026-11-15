@@ -1,0 +1,24 @@
+/* Android-specific landscape menu layout. */
+.touchClient .operatorBadge{display:none}
+@media(max-height:600px) and (orientation:landscape){.touchClient .playCard{max-height:calc(100vh - 112px);overflow:auto}.touchClient .friendRail{bottom:44px}.touchClient .lobbyFooter{font-size:8px}}
+@media(max-height:600px) and (orientation:landscape){
+ .touchClient #pane-play h1{font-size:42px;line-height:1.05;margin:6px 0 10px}
+ .touchClient #pane-play .eyebrow{font-size:8px}
+ .touchClient #joinForm .fields{gap:8px}
+ .touchClient #joinForm label{font-size:9px;letter-spacing:1px;margin-top:0}
+ .touchClient #joinForm input{padding:7px 10px;margin-top:5px;font-size:11px;min-height:30px;height:30px}
+ .touchClient #joinForm .entryChoices{margin:8px 0}
+ .touchClient #joinForm select{padding:6px;margin-top:4px;font-size:11px;min-height:30px}
+ .touchClient #join{padding:9px 12px;min-height:36px;font-size:11px;margin-top:4px}
+ .touchClient #status{font-size:10px;line-height:1.35;margin:8px 0 0}
+ .touchClient .friendRail{display:none}
+}
+@media(max-height:600px) and (orientation:landscape){
+ .touchClient .playCard{top:80px;bottom:28px;max-height:none;padding:12px 24px}
+ .touchClient #pane-play h1{font-size:36px;line-height:1.05;margin:4px 0 8px}
+ .touchClient #joinForm,.touchClient #joinForm .fields{margin:0}
+ .touchClient #joinForm label{line-height:1.4}
+ .touchClient #joinForm input{height:28px;min-height:28px;margin-top:3px;padding:5px 10px}
+ .touchClient #joinForm .entryChoices{margin:6px 0}
+ .touchClient #joinForm select{height:28px;min-height:28px;padding:5px;margin-top:3px}
+}

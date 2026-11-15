@@ -1,0 +1,3 @@
+linux 10 updated source files match ASAR; packaged version 1.0.1; no QA hooks
+win 10 updated source files match ASAR; packaged version 1.0.1; no QA hooks
+Linux startup wrapper and unpacked XInput2 helper match source

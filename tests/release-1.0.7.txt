@@ -1,0 +1,9 @@
+PASS: 217/217 regression tests
+PASS: butterfly render fingerprint matches exact 1.0.4 geometry/materials
+PASS: knife-motion.mjs SHA256 unchanged from approved 1.0.6
+PASS: karambit mesh/grip unchanged from 1.0.6
+PASS: butterfly blade forward -Z >85%; sampled triangle-surface clearance; 120 interruption cycles
+PASS: source Linux and packaged Linux real input and game assets
+PASS: 71 selected source files match Linux/Windows ASAR
+PASS: AppImage and NSIS payloads match tested ASAR; NSIS archive integrity clean
+LIMIT: no native Windows runtime; Linux Xvfb/software GPU with watchdog disabled

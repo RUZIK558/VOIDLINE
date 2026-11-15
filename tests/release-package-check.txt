@@ -1,0 +1,4 @@
+linux: version 0.5.0 and 24 application files match final source
+win: version 0.5.0 and 24 application files match final source
+Extracted package: 7 HTTP routes returned 200
+Extracted package: real WebSocket join, live round and Circuit skin PASS

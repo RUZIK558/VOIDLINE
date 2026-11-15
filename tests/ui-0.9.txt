@@ -1,0 +1,4 @@
+SCOPE BOTH AXES {"normal":{"yaw":-0.04,"pitch":-0.02},"scope":{"yaw":-0.026000000000000002,"pitch":-0.013000000000000001}}
+LIVE MATCH: three server-owned knives, inspect and primary/heavy events PASS
+PAGE ERRORS none
+MOBILE + NARROW UI: no JS errors, no viewport horizontal overflow.

@@ -1,0 +1,16 @@
+TERMINAL A: CT 4.19–6.28s; T 10.84–11.80s; worst-slot CT lead 4.57s
+TERMINAL B: CT 4.77–6.51s; T 10.27–11.22s; worst-slot CT lead 3.75s
+COURTYARD A: CT 4.61–6.92s; T 11.29–12.01s; worst-slot CT lead 4.37s
+COURTYARD B: CT 4.66–6.96s; T 10.47–11.65s; worst-slot CT lead 3.51s
+DOCKYARD A: CT 5.41–7.72s; T 10.87–11.83s; worst-slot CT lead 3.15s
+DOCKYARD B: CT 5.46–7.77s; T 10.60–12.01s; worst-slot CT lead 2.83s
+FOUNDRY A: CT 4.62–6.82s; T 11.20–12.26s; worst-slot CT lead 4.38s
+FOUNDRY B: CT 5.20–7.06s; T 10.51–11.80s; worst-slot CT lead 3.45s
+OASIS A: CT 5.54–7.85s; T 12.22–13.17s; worst-slot CT lead 4.37s
+OASIS B: CT 5.78–8.09s; T 11.64–12.60s; worst-slot CT lead 3.56s
+DEPOT A: CT 5.46–6.53s; T 11.72–12.68s; worst-slot CT lead 5.20s
+DEPOT B: CT 6.23–7.18s; T 10.96–11.91s; worst-slot CT lead 3.77s
+FROST A: CT 5.31–7.62s; T 11.59–12.55s; worst-slot CT lead 3.97s
+FROST B: CT 5.55–7.86s; T 11.02–11.97s; worst-slot CT lead 3.16s
+BASTION A: CT 5.36–7.55s; T 12.17–13.13s; worst-slot CT lead 4.62s
+BASTION B: CT 5.90–7.79s; T 11.51–12.58s; worst-slot CT lead 3.72s

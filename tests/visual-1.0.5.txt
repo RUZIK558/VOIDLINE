@@ -1,0 +1,6 @@
+PASS butterfly: attached grip, fixed pin/ring, four clips, 120 interruption cycles without drift
+PASS karambit: attached grip, fixed pin/ring, four clips, 120 interruption cycles without drift
+PASS World markers are compact symbol + distance, no sender name or command text
+PASS Ordinary pings do not create feed noise; quick commands capped at two compact lines
+PASS Command menu renders at 1280x800 and 390x780 without horizontal overflow
+PASS No page errors in model, scene, HUD and animation checks

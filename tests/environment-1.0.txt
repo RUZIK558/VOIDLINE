@@ -1,0 +1,6 @@
+Full Node regression: 173 tests, 173 pass, 0 fail, 0 skip.
+Browser QA: headless Chromium, WebGL via SwiftShader; details in browser-1.0.txt.
+Peer discovery: two real UDP multicast services on this machine; existing TLS integration tests also pass.
+Native Linux runtime smoke test did not launch: this sandbox lacks libgtk-3.so.0. This is not a successful AppImage runtime test.
+Windows executables are cross-built, not run on Windows in this environment.
+Separate physical-computer networking, native Wayland/X11 mouse capture, firewall and NAT remain unverified.

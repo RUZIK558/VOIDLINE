@@ -1,0 +1,3 @@
+linux-unpacked: 62 updated files including all 47 samples match source; version 1.0.2; no QA hooks included
+win-unpacked: 62 updated files including all 47 samples match source; version 1.0.2; no QA hooks included
+Linux entry-point wrapper and unpacked XInput2 helper match source

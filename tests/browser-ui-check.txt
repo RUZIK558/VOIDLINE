@@ -1,0 +1,6 @@
+inventory selected
+profile persisted
+utility purchase
+live fire
+live smoke
+ERRORS []

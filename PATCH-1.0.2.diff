@@ -1,0 +1,2585 @@
+--- 1.0.1/CHANGELOG.md
++++ 1.0.2/CHANGELOG.md
+@@ -1,3 +1,13 @@
++## 1.0.2 — звук и многоэтажные карты
++
++- 47 оригинальных локальных звуков, отдельные выстрелы, шаги по четырём поверхностям, перезарядка и события матча.
++- Пространственное затухание, стереопанорама, приглушение за стенами, компрессор и ограничение голосов.
++- Перестроены все восемь оригинальных карт: уникальные укрытия и проходы, по два верхних помещения с балконами и двумя лестницами.
++- Общая высотная физика игроков, ботов, гранат и пуль; выпадение/подбор предметов учитывает этаж.
++- Навигация ботов по лестничным переходам, кэш безопасных рёбер наземной сетки.
++- Настройка спавнов КТ/Т: защитники раньше выходят к A и B при одинаковой скорости, включая смену сторон.
++- Сохранены исправления закупки, Linux XInput2 и уведомлений из 1.0.1.
++
+ # 1.0.1
+ 
+ Агент закупки учитывает сторону и смену ролей. Linux: предзапускной выбор X11/XWayland и относительный XInput2-помощник с остановкой при потере игрового захвата. Внутриигровые уведомления чата матча и P2P, счётчики непрочитанного, защита от повторного уведомления истории. Карты CS2 не заменены: нужны исходные ресурсы.
+--- 1.0.1/QA-1.0.2-RU.md
++++ 1.0.2/QA-1.0.2-RU.md
+@@ -0,0 +1,25 @@
++# Проверки VOIDLINE 1.0.2
++
++## Что проверяется
++- Регрессия: все старые тесты, а также реальные серверы WebSocket и P2P; новые проверки этажей и звука. Итоговый отчёт: tests/regression-final-1.0.2.txt.
++- Лестницы: 16 верхних помещений × 2 независимых подхода, подъём и спуск с серверными коллизиями. Навигация к верхнему этажу и обратно на точку.
++- Слои: проход под этажом, опора верхнего пола, прыжки, удары головой о перекрытие, падение с края, попадания пуль/гранат по плитам, запрет подбора сквозь потолок.
++- КТ/Т: два сайта × восемь карт × пять стартовых позиций каждой роли, в обеих половинах матча.
++- Баланс: 8-направленный Dijkstra с шагом 1 м и порталами лестничных переходов (учтены сокращения через верхние этажи), радиус игрока 0.36 м, промежуточные swept-проверки рёбер, одинаковая скорость 5.2 м/с; прибытие на границу зоны закладки. Это оценка проходимых маршрутов, не статистика побед и не гарантия при произвольных действиях игроков.
++- Звук: 47 файлов PCM, 44.1 кГц / 16 бит, уникальные выстрелы и отсутствие цифрового клиппинга в сэмплах; направления, расстояния, укрытия, тихая ходьба и приседание.
++- Настоящий Electron под Linux/Xvfb: декодирование всех 47 сэмплов, ненулевой выход аудиографа, воспроизведение, освобождение голосов и изменение громкости во время проигрывания. Проверяется цифровой выход, не субъективное качество на физических колонках/наушниках.
++- Все восемь карт отрисованы настоящим WebGL-рендерером. PNG-снимки прямого framebuffer в previews/1.0.2-*.png.
++- Linux XInput2 и закупка/чат повторно проверяются сохранённым нативным сценарием из 1.0.1, адаптированным к номеру версии.
++- Windows: сборка и целостность архива; запуск на настоящей Windows здесь не проверялся.
++
++## Повторяемость
++npm ci
++npm test
++node tools/check-map-balance.mjs
++npm run build:audio
++npm run dist
++
++Дополнительные QA-сценарии tools/qa-v102*.cjs требуют Playwright, GTK, Xvfb и xdotool. Их тестовые точки доступа внедряются только в ответы тестового браузера, в публичные игровые модули и сборки не включены.
++
++## Ограничения
++Чистый Wayland без XWayland, физические мыши, аудиоустройства и длительные матчи между разными компьютерами не проверены. Полный баланс побед требует живых матчей; геометрический приоритет КТ не исключает сильных позиций, которые проявятся в игре. Нельзя смешивать 1.0.2 с прежними версиями сервера: геометрия карт изменилась на обеих сторонах.
+--- 1.0.1/README.md
++++ 1.0.2/README.md
+@@ -1,3 +1,7 @@
++## Обновление 1.0.2
++
++Оригинальный пространственный звук (47 локальных WAV), восемь переработанных многоэтажных карт, балконы и два лестничных подхода к каждому верхнему помещению. Все пять стартовых позиций проверяются на ранний выход КТ к обеим точкам. См. RELEASE-1.0.2-RU.md; проверка: `node tools/check-map-balance.mjs`.
++
+ # VOIDLINE 1.0.1
+ 
+ Актуальные изменения и ограничения: [RELEASE-1.0.1-RU.md](RELEASE-1.0.1-RU.md). Linux запускайте через AppImage/поставляемый лаунчер или `npm start`: они выбирают графический бэкенд до запуска Electron. Точные карты CS2 пока не перенесены.
+--- 1.0.1/RELEASE-1.0.2-RU.md
++++ 1.0.2/RELEASE-1.0.2-RU.md
+@@ -0,0 +1,34 @@
++# VOIDLINE 1.0.2 — звук и многоэтажные карты
++
++## Звук
++47 оригинальных синтезированных WAV-эффектов: десять разных выстрелов, шаги по камню, металлу, песку и снегу, варианты перезарядки, гранаты, попадания, экипировка, закупка, чат и события раунда. Направление, расстояние и приглушение стенами; шаги при беге, тихая ходьба и приседание; звук следует за наблюдаемым союзником. Общая громкость управляется в настройках и меняется во время воспроизведения. Сэмплы загружаются локально, без интернета. Микрофон для эффектов не требуется. Источники звуков — tools/generate-audio.py; лицензия CC0, без записей из CS2.
++
++## Карты
++Переработаны все восемь существующих оригинальных карт. Это не карты CS2 и не их копии.
++- TERMINAL: терминал, кассовые укрытия, диспетчерская и рынок.
++- COURTYARD: старый квартал с аркадой и жилыми этажами.
++- DOCKYARD: контейнерные петли, склад и капитанский мостик.
++- FOUNDRY: печной зал, ремонтный этаж и высокая галерея.
++- OASIS: открытая площадь, базар и караван-сарай.
++- DEPOT: вагонные коридоры, сигнальная башня и ремонтный ангар.
++- FROST: ветровые экраны, лаборатория и обсерватория.
++- BASTION: укреплённые дворы, казарма и надвратная галерея.
++
++На каждой карте два доступных верхних этажа с балконами и двумя лестничными подходами. Общие серверные коллизии для движения, потолков, пуль и гранат; прыжки и посадка на этаж; оружие и бомба выпадают на свой уровень, подбор сквозь перекрытия запрещён. Навигация ботов использует лестничные переходы.
++
++## Баланс
++Оборонительные стартовые позиции и подходы КТ приближены к A и B. Северная позиция привязана именно к роли КТ, включая смену сторон. Т получают отдельные боковые и центральные подходы; длинные стартовые задержки на вытянутых картах сокращены.
++
++Проверка tools/check-map-balance.mjs измеряет кратчайшие проходимые маршруты всех пяти стартовых позиций до границы обеих зон закладки при одинаковой скорости 5.2 м/с, без перестрелок и остановок. Результаты — tests/map-balance-1.0.2.json и .txt. Такая проверка подтверждает геометрическое преимущество КТ по первому выходу, а не гарантирует порядок при разных действиях игроков и не заменяет статистику живых матчей.
++
++## Предыдущие исправления
++Сохранены исправления 1.0.1: агент своей стороны в закупке, Linux XInput2 и ранний выбор X11/XWayland, уведомления игрового/P2P-чата. Для нативного XInput2 нужен X11 или XWayland (DISPLAY). Чистый Wayland без XWayland остаётся на браузерном Pointer Lock.
++
++## Сборка
++npm ci
++npm run build:audio
++npm test
++node tools/check-map-balance.mjs
++npm run dist
++
++Для пересборки Linux-помощника требуются gcc, заголовки и библиотеки X11/Xi. Windows-сборки создаются на Linux; запуск на настоящей Windows должен проверяться отдельно. Отчёты проверок прилагаются к исходникам. Наличие автоматических тестов не означает отсутствие любых ошибок на всех устройствах.
+--- 1.0.1/electron.cjs
++++ 1.0.2/electron.cjs
+@@ -41,7 +41,7 @@
+       minHeight: 700,
+       backgroundColor: "#0a1119",
+       autoHideMenuBar: true,
+-      title: "VOIDLINE / Stabilization 1.0.1",
++      title: "VOIDLINE / Stabilization 1.0.2",
+       webPreferences: {
+         preload: path.join(__dirname, "preload.cjs"),
+         nodeIntegration: false,
+--- 1.0.1/match.mjs
++++ 1.0.2/match.mjs
+@@ -10,7 +10,7 @@
+   shotSpread,
+   accelerate,
+   eyeHeight,
+-  feetY,
++  feetY, isGrounded, verticalStep, blocked, supportAt,
+   hitPlayer,
+   damageFor,
+   atSite,
+@@ -296,6 +296,7 @@
+       this.drops.push({
+         id: randomUUID().slice(0, 8),
+         x: p.x,
++        y:supportAt(p.x,p.z,this.map.boxes,feetY(p)+.03),
+         z: p.z,
+         kind: "utility",
+         utility: p.utility,
+@@ -306,7 +307,7 @@
+     }
+     const g = p.guns[p.weapon];
+     if (!g || WEAPONS[p.weapon]?.melee || this.roundEvent.guns) return;
+-    this.drops.push({ id: randomUUID().slice(0, 8), x: p.x, z: p.z, weapon: p.weapon, ...g });
++    this.drops.push({ id: randomUUID().slice(0, 8), x: p.x, y:supportAt(p.x,p.z,this.map.boxes,feetY(p)+.03), z: p.z, weapon: p.weapon, ...g });
+     delete p.guns[p.weapon];
+     p.weapon = Object.keys(p.guns).find(w=>weaponSlot(w)==="primary") || Object.keys(p.guns)[0] || null;
+     p.reload = 0;
+@@ -314,7 +315,7 @@
+   }
+   releaseBomb(p) {
+     if (this.bomb.state === "carried" && this.bomb.carrier === p.id)
+-      this.bomb = { state: "dropped", x: p.x, z: p.z };
++      this.bomb = { state: "dropped", x: p.x, y:supportAt(p.x,p.z,this.map.boxes,feetY(p)+.03), z: p.z };
+     if (this.bomb.actor === p.id) {
+       delete this.bomb.actor;
+       delete this.bomb.startedAt;
+@@ -323,10 +324,10 @@
+   reachable(p, o, r = 1.8) {
+     const dx = o.x - p.x,
+       dz = o.z - p.z,
+-      dy = 0.25 - p.y,
++      dy = (o.y||0)+0.25 - p.y,
+       length = Math.hypot(dx, dy, dz);
+     return (
+-      Math.hypot(dx, dz) < r &&
++      Math.hypot(dx, dz) < r && Math.abs(feetY(p)-(o.y||0))<1.1 &&
+       (length < 0.01 ||
+         wallDistance([p.x, p.y, p.z], [dx / length, dy / length, dz / length], this.map.boxes) >= length - 0.05)
+     );
+@@ -379,7 +380,7 @@
+     }
+     for (const [utility, count] of Object.entries(p.grenades))
+       for (let i = 0; i < count; i++)
+-        this.drops.push({ id: randomUUID().slice(0, 8), x: p.x, z: p.z, kind: "utility", utility });
++        this.drops.push({ id: randomUUID().slice(0, 8), x: p.x, y:supportAt(p.x,p.z,this.map.boxes,feetY(p)+.03), z: p.z, kind: "utility", utility });
+     this.releaseBomb(p);
+     p.alive = false;
+     p.hp = 0;
+@@ -477,6 +478,7 @@
+       return;
+     if(w.melee){this.melee(p,now,p.wantShot ? !!p.meleeHeavy : !!p.input.altFire);return;}
+     if (!g.ammo) {
++      if(!g.reserve){this.emit({type:"dry",id:p.id});p.nextShot=now+200;}
+       this.reload(p, now);
+       return;
+     }
+@@ -487,7 +489,7 @@
+       ? { easy: 0.13, normal: 0.065, hard: 0.025 }[difficulty]
+       : shotSpread(p.weapon, {
+           movement: Math.hypot(p.vx, p.vz) / 5.2,
+-          airborne: feetY(p) > 0.02,
++          airborne: !isGrounded(p,this.map.boxes),
+           heat: p.recoilHeat, scoped:p.scoped,
+         }) * (p.crouch ? 0.75 : 1)) * this.roundEvent.spread;
+     const recoil = p.bot ? { pitch: 0, yaw: 0 } : recoilFor(p.weapon, p.recoilHeat);
+@@ -613,6 +615,7 @@
+       this.bomb = {
+         state: "planted",
+         x: p.x,
++        y:supportAt(p.x,p.z,this.map.boxes,feetY(p)+.03),
+         z: p.z,
+         site: atSite(p, this.map.sites).id,
+         explodeAt: now + this.rules.bombMs * this.roundEvent.fuse,
+@@ -679,20 +682,19 @@
+       }
+       if (p.bot) {
+         botThink(p, now, dt);
++        verticalStep(p,dt,this.map.boxes,15*this.roundEvent.gravity);
+         continue;
+       }
+       const input = now - (p.inputAt || 0) > 300 ? {} : p.input;
+       const feet = feetY(p);
+-      p.crouch = !!input.crouch;
++      p.crouch = !!input.crouch || (p.crouch && blocked(p.x,p.z,.36,this.map.boxes,feet,1.87));
+       p.y = feet + eyeHeight(p);
+       accelerate(p, input, dt, this.map.boxes);
+-      if (input.jump && !p.jumpHeld && feetY(p) <= 0.001) {
++      if (input.jump && !p.jumpHeld && isGrounded(p,this.map.boxes)) {
+         p.vy = 5.2 * this.roundEvent.jump;
+       }
+       p.jumpHeld = !!input.jump;
+-      p.vy -= 15 * this.roundEvent.gravity * dt;
+-      p.y = Math.max(eyeHeight(p), p.y + p.vy * dt);
+-      if (feetY(p) <= 0) p.vy = 0;
++      verticalStep(p,dt,this.map.boxes,15*this.roundEvent.gravity);
+       this.objective(p, input, now);
+       if (p.utility && p.wantShot) this.throwGrenade(p, p.utility, !!p.throwUnderhand, now);
+       else if ((input.fire && WEAPONS[p.weapon]?.auto) || p.wantShot) this.fire(p, now, difficulty);
+@@ -925,6 +927,7 @@
+         vx: p.vx,
+         vz: p.vz,
+         crouch: p.crouch,
++        grounded: isGrounded(p,this.map.boxes),
+         yaw: p.yaw,
+         pitch: p.pitch,
+         hp: p.hp,
+@@ -955,7 +958,7 @@
+         spread:
+           shotSpread(p.weapon, {
+             movement: Math.hypot(p.vx, p.vz) / 5.2,
+-            airborne: feetY(p) > 0.02,
++            airborne: !isGrounded(p,this.map.boxes),
+             heat: p.recoilHeat, scoped:p.scoped,
+           }) * (p.crouch ? 0.75 : 1) * this.roundEvent.spread,
+       })),
+--- 1.0.1/package-lock.json
++++ 1.0.2/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "voidline-arena",
+-  "version": "1.0.1",
++  "version": "1.0.2",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "voidline-arena",
+-      "version": "1.0.1",
++      "version": "1.0.2",
+       "license": "MIT",
+       "dependencies": {
+         "selfsigned": "^2.4.1",
+--- 1.0.1/package.json
++++ 1.0.2/package.json
+@@ -1,8 +1,8 @@
+ {
+   "name": "voidline-arena",
+-  "version": "1.0.1",
++  "version": "1.0.2",
+   "private": true,
+-  "description": "VOIDLINE tactical FPS — stabilization release",
++  "description": "VOIDLINE — original audio and multilevel map rework",
+   "main": "electron.cjs",
+   "type": "module",
+   "scripts": {
+@@ -11,7 +11,8 @@
+     "test": "node --test tests/*.test.mjs",
+     "dist": "electron-builder --linux AppImage --win nsis portable --x64",
+     "build:linux-input": "node tools/build-linux-input.cjs",
+-    "predist": "npm run build:linux-input"
++    "predist": "npm run build:linux-input",
++    "build:audio": "python3 tools/generate-audio.py"
+   },
+   "dependencies": {
+     "selfsigned": "^2.4.1",
+@@ -44,7 +45,8 @@
+       "RELEASE-1.0-RU.md",
+       "QA-1.0-RU.md",
+       "linux-input.mjs",
+-      "RELEASE-1.0.1-RU.md"
++      "RELEASE-1.0.1-RU.md",
++      "RELEASE-1.0.2-RU.md"
+     ],
+     "win": {
+       "target": [
+--- 1.0.1/server.mjs
++++ 1.0.2/server.mjs
+@@ -91,6 +91,10 @@
+                 ? "image/png"
+                 : f.endsWith(".svg")
+                   ? "image/svg+xml"
++                  : f.endsWith(".wav")
++                    ? "audio/wav"
++                  : f.endsWith(".json")
++                    ? "application/json"
+                   : f.endsWith(".glb")
+                     ? "model/gltf-binary"
+                     : "application/octet-stream",
+--- 1.0.1/public/audio.mjs
++++ 1.0.2/public/audio.mjs
+@@ -0,0 +1,75 @@
++// Original pre-rendered samples, decoded once. Positional one-shots; no remote or
++// persistent microphone use. Master compressor protects against piled-up shots.
++export const SOUND_IDS=Object.freeze([
++ ...['rifle','ak47','m4a1s','awp','ssg08','mp9','p90','pistol','glock','deagle'].map(w=>'shot-'+w),
++ ...['stone','metal','sand','snow'].flatMap(s=>[0,1,2].map(v=>'step-'+s+'-'+v)),
++ 'reload-rifle','reload-pistol','reload-sniper','round','live','win','loss','plant','defuse','chat','buy','beep','hit','scope',
++ 'explosion','flash','hiss','throw','bounce','knife','hurt','equip','land','jump','dry'
++]);
++export function spatialMix(source,listener,{range=55,occluded=false}={}){
++ if(!source||!listener)return {gain:1,pan:0,lowpass:18000};
++ const dx=source.x-listener.x,dz=source.z-listener.z,dy=(source.y??1)-(listener.y??1),d=Math.hypot(dx,dy,dz);
++ const gain=Math.pow(Math.max(0,1-d/range),2)*(occluded?.38:1);
++ const right=dx*Math.cos(listener.yaw||0)-dz*Math.sin(listener.yaw||0);
++ return {gain,pan:Math.max(-1,Math.min(1,right/Math.max(1,Math.hypot(dx,dz)))),lowpass:occluded?950:Math.max(2200,18000-d*180)};
++}
++export function soundName(kind,weapon='rifle'){
++ if(kind==='shot')return 'shot-'+(SOUND_IDS.includes('shot-'+weapon)?weapon:'rifle');
++ if(kind==='reload')return 'reload-'+(['awp','ssg08'].includes(weapon)?'sniper':['pistol','glock','deagle'].includes(weapon)?'pistol':'rifle');
++ return SOUND_IDS.includes(kind)?kind:null;
++}
++export function createStepTracker(){
++ let round=null;const old=new Map();
++ return {reset(){round=null;old.clear();},update(state,surface='stone'){
++  const events=[];
++  if(round!==state.round){old.clear();round=state.round;}
++  const ids=new Set();
++  for(const p of state.players){ids.add(p.id);const prev=old.get(p.id),dist=prev?Math.hypot(p.x-prev.x,p.z-prev.z):0;
++   let stride=(prev?.stride||0)+(dist<2?dist:0),variant=prev?.variant||0;
++   if(prev&&p.alive&&state.phase==='live'){
++    const pos={x:p.x,y:p.y,z:p.z},grounded=p.grounded!==false;
++    if(!grounded&&prev.grounded===true&&p.y>prev.y+.04)events.push({kind:'jump',id:p.id,pos});
++    if(grounded&&prev.grounded===false)events.push({kind:'land',id:p.id,pos});
++    if(!grounded||p.crouch||Math.hypot(p.vx||0,p.vz||0)<2.7)stride=0;
++    else if(stride>1.75){events.push({kind:`step-${typeof surface==='function'?surface(p):surface}-${variant%3}`,id:p.id,pos});stride%=1.75;variant++;}
++    if(p.reload&&!prev.reload)events.push({kind:'reload',weapon:p.weapon,id:p.id,pos});
++   }else stride=0;
++   old.set(p.id,{x:p.x,y:p.y,z:p.z,grounded:p.grounded!==false,reload:p.reload,stride,variant});
++  }
++  for(const id of old.keys())if(!ids.has(id))old.delete(id);
++  return events;
++ }};
++}
++export function createGameAudio({getVolume=()=>.7,getListener=()=>null,isOccluded=()=>false,onError=()=>{}}={}){
++ let context=null,master,compressor,loading=null,disposed=false,volume=-1;const buffers=new Map(),voices=new Set(),last=new Map();
++ function init(){
++  if(disposed)return;
++  try{if(!context){context=new AudioContext();master=context.createGain();compressor=context.createDynamicsCompressor();compressor.threshold.value=-14;compressor.knee.value=18;compressor.ratio.value=6;compressor.attack.value=.003;compressor.release.value=.16;master.connect(compressor);compressor.connect(context.destination);preload();}if(context.state==='suspended')context.resume().catch(onError);}catch(e){onError(e);}
++ }
++ function preload(){
++  if(loading)return loading;
++  if(!context)return Promise.resolve();
++  let next=0;loading=Promise.all(Array.from({length:4},async()=>{while(next<SOUND_IDS.length){const id=SOUND_IDS[next++];try{const r=await fetch(new URL('./assets/audio/'+id+'.wav',import.meta.url));if(!r.ok)throw Error('Sound '+id+': '+r.status);const b=await context.decodeAudioData(await r.arrayBuffer());if(!disposed)buffers.set(id,b);}catch(e){onError(e);}}}));return loading;
++ }
++ function play(kind,options={}){
++  if(disposed||!context||context.state!=='running')return false;
++  const name=soundName(kind,options.weapon),buffer=buffers.get(name);if(!buffer||voices.size>=40)return false;
++  const t=context.currentTime,key=options.key||name;
++  if(t-(last.get(key)??-10)<(options.cooldown??.025))return false;
++  const listener=getListener(),source=options.pos;
++  const mix=spatialMix(source,listener,{range:options.range??(name.startsWith('step-')?19:name==='land'?22:65),occluded:!!source&&isOccluded(source,listener)});
++  if(mix.gain<.002)return false;
++  last.set(key,t);if(last.size>512)for(const [k,v]of last)if(t-v>10)last.delete(k);
++  update();
++  const node=context.createBufferSource(),gain=context.createGain(),filter=context.createBiquadFilter(),pan=context.createStereoPanner();
++  node.buffer=buffer;node.playbackRate.value=Math.max(.5,Math.min(2,options.rate||1));
++  gain.gain.value=mix.gain*(options.gain??(name.startsWith('step-')?.22:name.startsWith('shot-')?.62:.4));
++  filter.type='lowpass';filter.frequency.value=mix.lowpass;pan.pan.value=mix.pan;
++  node.connect(filter);filter.connect(gain);gain.connect(pan);pan.connect(master);voices.add(node);
++  node.onended=()=>{voices.delete(node);for(const n of[node,filter,gain,pan])n.disconnect();node.buffer=null;};
++  node.start();return true;
++ }
++ function update(){if(!context||!master)return;const v=Math.max(0,Math.min(1,Number(getVolume())||0));if(v!==volume){volume=v;master.gain.setTargetAtTime(v,context.currentTime,.015);}}
++ function stop(){for(const v of voices){try{v.stop();}catch{}}last.clear();}
++ return {init,preload,play,stop,update,stats:()=>({loaded:buffers.size,voices:voices.size,state:context?.state||'uninitialized',volume}),async dispose(){disposed=true;stop();buffers.clear();if(context)await context.close();}};
++}
+--- 1.0.1/public/diagnostics.mjs
++++ 1.0.2/public/diagnostics.mjs
+@@ -8,7 +8,7 @@
+   window.voidlineDiagnostics?.record(entry)?.catch(()=>{});
+  };
+  async function saveReport(){
+-  const text=JSON.stringify({version:'1.0.1',info:getInfo(),events:records},null,2),a=document.createElement('a');
++  const text=JSON.stringify({version:'1.0.2',info:getInfo(),events:records},null,2),a=document.createElement('a');
+   const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));a.href=url;a.download='VOIDLINE-diagnostics.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  async function safeReload(){
+--- 1.0.1/public/game.mjs
++++ 1.0.2/public/game.mjs
+@@ -1,3 +1,5 @@
++import {wallDistance} from "./shared.mjs";
++import {createGameAudio,createStepTracker} from "./audio.mjs";
+ import {createChatNotices} from "./chat-notices.mjs";
+ import {aimDelta} from "./aim.mjs";
+ import {purchaseError} from "./purchase.mjs";
+@@ -74,7 +76,7 @@
+ const postFX = createPostFX(renderer);
+ let prefs = normalizeSettings(null),
+   inventoryUI;
+-const diagnostics=setupDiagnostics(()=>({version:'1.0.1',platform:navigator.platform,userAgent:navigator.userAgent,graphics:{shadows:prefs.shadows,renderScale:prefs.renderScale,aa:prefs.aa},gpu:{...renderer.info.memory}}));
++const diagnostics=setupDiagnostics(()=>({version:'1.0.2',platform:navigator.platform,userAgent:navigator.userAgent,graphics:{shadows:prefs.shadows,renderScale:prefs.renderScale,aa:prefs.aa},gpu:{...renderer.info.memory}}));
+ const down = (name) => actionDown(keys, prefs, name);
+ const scene = new THREE.Scene();
+ scene.background = new THREE.Color("#a7d5e5");
+@@ -157,7 +159,7 @@
+       scene.add(model);
+       dropModels.set(d.id, model);
+     }
+-    model.position.set(d.x, 0.2, d.z);
++    model.position.set(d.x, (d.y||0)+0.2, d.z);
+   }
+   for (const [id, model] of dropModels)
+     if (!ids.has(id)) {
+@@ -168,7 +170,7 @@
+   bombModel.visible =
+     ["dropped", "planted", "defused", "exploded"].includes(b?.state) &&
+     b.state !== "exploded";
+-  if (bombModel.visible) bombModel.position.set(b.x, 0.18, b.z);
++  if (bombModel.visible) bombModel.position.set(b.x, (b.y||0)+0.18, b.z);
+ }
+ 
+ // The view model uses its own depth-cleared pass to avoid clipping into walls.
+@@ -277,89 +279,16 @@
+ const models = new Map(),
+   tracers = [],
+   feed = [];
+-let audio,activeVoices=0;
+-function audioInit() {
+-  try {
+-    audio ||= new AudioContext();
+-    audio.resume();
+-  } catch {}
+-}
+-function sound(kind, remote = false) {
+-  if (!audio||activeVoices>=32) return;
+-  activeVoices++;
+-  const t = audio.currentTime,
+-    g = audio.createGain();
+-  const master = audio.createGain();
+-  master.gain.value =
+-    (window.voidlinePrefs?.volume ?? 0.7) *
+-    ((me?.flash?.until || 0) > Date.now() + netOffset ? 0.35 : 1);
+-  master.connect(audio.destination);
+-  g.connect(master);
+-  const release=(source,...nodes)=>{source.onended=()=>{activeVoices=Math.max(0,activeVoices-1);for(const node of [source,...nodes,g,master]){try{node.disconnect();}catch{}};if('buffer' in source)source.buffer=null;};};
+-  if (["explosion", "hiss", "flash", "throw"].includes(kind)) {
+-    if (kind === "flash") {
+-      const o = audio.createOscillator();
+-      o.type = "sine";
+-      o.frequency.value = 2600;
+-      g.gain.setValueAtTime(0.028, t);
+-      g.gain.exponentialRampToValueAtTime(0.001, t + 1.3);
+-      o.connect(g);release(o);
+-      o.start(t);
+-      o.stop(t + 1.4);
+-      return;
+-    }
+-    const duration = kind === "explosion" ? 0.55 : kind === "hiss" ? 0.45 : 0.1;
+-    const buf = audio.createBuffer(
+-        1,
+-        Math.ceil(audio.sampleRate * duration),
+-        audio.sampleRate,
+-      ),
+-      data = buf.getChannelData(0);
+-    for (let i = 0; i < data.length; i++)
+-      data[i] =
+-        (Math.random() * 2 - 1) *
+-        Math.exp(-i / (audio.sampleRate * (duration / 5)));
+-    const source = audio.createBufferSource(),
+-      filter = audio.createBiquadFilter();
+-    source.buffer = buf;
+-    filter.type = "lowpass";
+-    filter.frequency.value =
+-      kind === "explosion" ? 260 : kind === "hiss" ? 1400 : 600;
+-    source.connect(filter);
+-    filter.connect(g);
+-    g.gain.value = kind === "explosion" ? 0.3 : 0.06;
+-    release(source,filter);
+-    source.start(t);
+-    return;
+-  }
+-  if (kind === "shot") {
+-    const n = audio.createBuffer(1, audio.sampleRate * 0.12, audio.sampleRate),
+-      d = n.getChannelData(0);
+-    for (let i = 0; i < d.length; i++)
+-      d[i] =
+-        (Math.random() * 2 - 1) * Math.exp(-i / (audio.sampleRate * 0.022));
+-    const src = audio.createBufferSource();
+-    src.buffer = n;
+-    const filter = audio.createBiquadFilter();
+-    filter.type = "lowpass";
+-    filter.frequency.value = remote ? 1100 : 2300;
+-    src.connect(filter);
+-    filter.connect(g);
+-    g.gain.value = remote ? 0.045 : 0.16;
+-    release(src,filter);
+-    src.start(t);
+-    src.stop(t + 0.12);
+-  } else {
+-    const o = audio.createOscillator();
+-    o.type = kind === "hit" ? "sine" : "triangle";
+-    o.frequency.setValueAtTime(kind === "chat" ? 960 : kind === "hit" ? 800 : 180, t);
+-    o.frequency.exponentialRampToValueAtTime(70, t + 0.08);
+-    g.gain.setValueAtTime(0.08, t);
+-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+-    o.connect(g);release(o);
+-    o.start(t);
+-    o.stop(t + 0.13);
+-  }
++const gameAudio=createGameAudio({
++ getVolume:()=>(window.voidlinePrefs?.volume??.7)*((me?.flash?.until||0)>Date.now()+netOffset ? .35 : 1),
++ getListener:()=>({x:camera.position.x,y:camera.position.y,z:camera.position.z,yaw:camera.rotation.y}),
++ isOccluded:(a,b)=>{if(!b)return false;const v=[b.x-a.x,b.y-(a.y??1),b.z-a.z],d=Math.hypot(...v);return d>.1&&wallDistance([a.x,a.y??1,a.z],v.map(n=>n/d),currentMap.boxes)<d-.15;},
++ onError:e=>console.warn('[audio]',e.message||e)
++}),stepTracker=createStepTracker();
++function audioInit(){gameAudio.init();}
++function sound(kind,remote=false){
++ const opts=typeof remote==='object'?remote:{gain:remote?.2:undefined};
++ return gameAudio.play(kind,opts);
+ }
+ function makePlayer(p) {
+   const root = buildOperator(p.team===state?.attackTeam?1:0);
+@@ -409,6 +338,10 @@
+ }
+ function event(e) {
+   utilityFX.event(e);
++  if(e.type==='dry'&&e.id===(spectateId||myId))sound('dry');
++  if(e.type==='round')sound('round');
++  if(e.type==='win')sound(e.reason==='defused'?'defuse':e.team===me?.team?'win':'loss');
++  if(e.type==='plant')sound('plant');
+   if (e.type === "throw" && e.id === (spectateId||myId)) {
+     throwView = { kind: e.kind, until: clock + 0.4 };
+     utilityViews[e.kind].userData.animations.play();
+@@ -416,7 +349,7 @@
+   if (e.type === "shot" && e.id !== myId && models.has(e.id))
+     models.get(e.id).shotUntil = clock + 0.18;
+   if(e.type === "melee") {
+-    if(e.id===(spectateId||myId)){getView(pov()?.weapon).userData.animations.play(e.heavy?"heavy":"fire");sound("throw");}
++    if(e.id===(spectateId||myId)){getView(pov()?.weapon).userData.animations.play(e.heavy?"heavy":"fire");sound("knife");}
+     else if(models.has(e.id))models.get(e.id).shotUntil=clock+.3;
+   }
+   if (e.type === "shot") {
+@@ -425,8 +358,8 @@
+       getView(pov()?.weapon).userData.animations.play("fire");
+       kick = 0.035;
+       flashTime = 0.045;
+-      sound("shot");
+-    } else sound("shot", true);
++      sound("shot",{weapon:e.weapon});
++    } else sound("shot",{weapon:e.weapon,pos:{x:e.from[0],y:e.from[1],z:e.from[2]},key:"shot-"+e.id});
+     const g = new THREE.BufferGeometry().setFromPoints([
+         shotOrigin(e,local),
+         new THREE.Vector3(...e.to),
+@@ -643,6 +576,7 @@
+       requestLock();
+     }
+     if (m.type === "purchase") {
++      if(m.ok)sound("buy");
+       $("buyMessage").textContent = m.ok
+         ? "Куплено: " + SHOP[m.item].name
+         : m.error;
+@@ -654,7 +588,13 @@
+         prediction = { vx: 0, vz: 0 };
+       }
+       if(m.mapId!==currentMap.id)loadMap(m.mapId);
++      const previousPhase=state?.phase;
+       state = m;
++      if(previousPhase==='freeze'&&m.phase==='live')sound('live');
++      for(const e of stepTracker.update(m,p=>p.y-eyeHeight(p)>.2?'metal':currentMap.surface)){
++       const local=e.id===(spectateId||myId);
++       sound(e.kind,{weapon:e.weapon,pos:local?null:e.pos,key:e.id+':'+e.kind,gain:e.kind.startsWith('step-')?(local?.16:.28):undefined});
++      }
+       netOffset = m.serverTime - Date.now();
+       me = m.players.find((p) => p.id === myId);
+       spectateId=spectatorTarget(m.players,me,spectateId)?.id||null;
+@@ -684,6 +624,7 @@
+     teamUI.hide();pendingTeamJoin=null;
+     voice.stop();
+     connected = false;
++    gameAudio.stop();stepTracker.reset();
+     releaseGameControls();publishInputState();
+     $("join").disabled = false;
+     if(active && !joinError && reconnectAttempts<6) {
+@@ -899,7 +840,7 @@
+   if(mobile)return;
+   if(hasGameControl()&&!me?.alive){if(e.button===0||e.button===2){changeSpectator(e.button===0?1:-1);return;}}
+   if (hasGameControl() && e.button === 0) mouseFire = true;
+-  if (hasGameControl() && e.button === 2) { if(WEAPONS[me?.weapon]?.scope && !me.utility) scoped=!scoped; else mouseAlt=true; }
++  if (hasGameControl() && e.button === 2) { if(WEAPONS[me?.weapon]?.scope && !me.utility) {scoped=!scoped;sound("scope");} else mouseAlt=true; }
+   sendInput();
+ });
+ document.addEventListener("mouseup", (e) => {
+@@ -1122,6 +1063,7 @@
+   lastEquipped = null;
+ function animate(time) {
+   requestAnimationFrame(animate);
++  gameAudio.update();
+   if(diagnostics.failed||document.hidden){lastTime=time;return;}
+   const interval = prefs.frameCap ? 1000 / prefs.frameCap : 0;
+   if (interval && time - lastRender < interval - 0.5) return;
+@@ -1202,14 +1144,14 @@
+           ? " · удерживай E рядом для разминирования"
+           : " · защити бомбу");
+       if (now > nextBeep && state.phase === "live") {
+-        sound("hit", true);
++        sound("beep",{pos:{x:b.x,y:.2,z:b.z},gain:.34,cooldown:.08});
+         nextBeep = now + Math.max(120, left * 24);
+       }
+       bombLight.visible = Math.floor(now / 220) % 2 === 0;
+     }
+     const nearest = (state.drops || []).find(
+       (d) =>
+-        Math.hypot(d.x - me.x, d.z - me.z) < 1.8 &&
++        Math.hypot(d.x - me.x, d.z - me.z) < 1.8 && Math.abs(me.y-eyeHeight(me)-(d.y||0))<1.1 &&
+         (d.kind === "utility"
+           ? utilityCount(me) < 4 &&
+             me.grenades[d.utility] < UTILITY[d.utility].max
+@@ -1254,6 +1196,7 @@
+     if (me.alive && state.phase === "live") {
+       const predicted = {
+         x: viewPos.x,
++        y: viewPos.y, crouch:me.crouch, vy:me.grounded?0:1,
+         z: viewPos.z,
+         yaw,
+         vx: prediction.vx,
+@@ -1326,6 +1269,7 @@
+       }
+       if (!actor.utility)
+         getView(actor?.weapon).userData.animations.play("equip");
++      if(lastEquipped)sound("equip");
+       lastEquipped = equipped;
+       wasReloading = false;
+     }
+@@ -1376,7 +1320,7 @@
+       m.root.userData.update(dt, {
+         speed,
+         crouching: p.crouch,
+-        airborne: p.y - eyeHeight(p) > 0.04,
++        airborne: p.grounded===false,
+         pitch: p.pitch || 0,
+         reload: !!p.reload,
+         shot: Math.max(0, (m.shotUntil || 0) - clock) / 0.18,
+@@ -1472,7 +1416,7 @@
+    if(a==="fire")mouseFire=true;
+    else if(["jump","crouch","interact"].includes(a)){keys[prefs.bindings[a]]=true;if(a==="interact")pickupRequest=true;}
+    else if(a==="reload")reloadRequest=true;
+-   else if(a==="scope"){if(me?.utility){mouseAlt=true;}else scoped=!scoped;}
++   else if(a==="scope"){if(me?.utility){mouseAlt=true;}else {scoped=!scoped;sound("scope");}}
+    else if(a==="weapon")weaponRequest=me?.inventory.find(w=>["primary","secondary"].includes(weaponSlot(w))&&weaponSlot(w)!==weaponSlot(me.weapon));
+    else if(a==="knife")weaponRequest=prefs.knifeModel;
+    else if(a==="inspect")getView(me?.weapon).userData.animations.play("inspect");
+--- 1.0.1/public/index.html
++++ 1.0.2/public/index.html
+@@ -3,7 +3,7 @@
+   <head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+-    <title>VOIDLINE — Stabilization 1.0.1</title>
++    <title>VOIDLINE — Stabilization 1.0.2</title>
+     <link rel="icon" type="image/svg+xml" href="assets/voidline.svg" />
+     <link rel="stylesheet" href="style.css" />
+   </head>
+@@ -13,7 +13,7 @@
+     <main id="menu" class="lobbyMenu">
+       <header class="lobbyTop">
+         <a class="lobbyLogo" href="#" aria-label="VOIDLINE">V/</a
+-        ><span class="edition">VOIDLINE<br /><small>FIX / 1.0.1</small></span>
++        ><span class="edition">VOIDLINE<br /><small>FIX / 1.0.2</small></span>
+         <nav aria-label="Разделы игры">
+           <button data-pane="arsenal">АРСЕНАЛ</button
+           ><button data-pane="inventory">ИНВЕНТАРЬ</button
+@@ -138,7 +138,7 @@
+         <p class="railFoot">P2P · TLS 1.3<br />Без центрального сервера</p>
+       </aside>
+       <footer class="lobbyFooter">
+-        <span>VOIDLINE / 1.0.1</span
++        <span>VOIDLINE / 1.0.2</span
+         ><span>Оригинальные модели и окружение · LAN / VPN</span>
+       </footer>
+     </main>
+--- 1.0.1/public/map-world.mjs
++++ 1.0.2/public/map-world.mjs
+@@ -24,11 +24,12 @@
+  else if(t.style==='palms'){box(0,.007,0,28,.014,30,road,false);const pool=mat('#509e9c',.25);box(-3,1.115,0,7.6,.025,5.6,pool,false);}
+  else if(t.style==='fort'){for(const z of [-35,35])box(0,.007,z,map.w-4,.014,8,road,false);}
+  else{box(0,.007,0,9,.014,map.d-3,road,false);for(let z=-hd+4;z<hd-4;z+=5)box(0,.018,z,.15,.02,2,accent,false);}
+- for(const [x,z,w,d,h,type] of map.boxes){
+-  const m=[wall,metal,crate][type];box(x,h/2,z,w,h,d,m);
++ for(const [x,z,w,d,h,type,base=0] of map.boxes){
++  const m=[wall,metal,crate,metal][type]||wall;box(x,base+h/2,z,w,h,d,m);
++  if(base>0||type===3)continue;
+   if(type===1){for(let a=-w/2+.15;a<w/2;a+=.45)box(x+a,h/2,z+d/2+.02,.04,h-.1,.04,dark);box(x,h+.04,z,w+.02,.08,d+.02,accent);}
+   if(type===2){for(const side of [-.36,.36])box(x+w*side,h/2,z,.06,h+.02,d+.03,dark);box(x,h*.35,z,w+.03,.06,d+.04,dark);}
+-  if(type===0&&w<map.w*.75&&d<map.d*.75){
++  if(type===0&&w>=3&&d>=3&&w<map.w*.75&&d<map.d*.75){
+    box(x,h+.08,z,w+.18,.16,d+.18,accent);
+    if(h>=3.8){
+     for(const side of [-1,1]){
+@@ -44,6 +45,22 @@
+  function sign(text,x,y,z,rot=0,w=5,h=1.4){const c=document.createElement('canvas');c.width=512;c.height=160;const x2=c.getContext('2d');x2.fillStyle='#14252d';x2.fillRect(0,0,512,160);x2.fillStyle=t.accent;x2.fillRect(14,16,5,128);x2.font='bold 48px Arial';x2.fillText(text,35,75);x2.font='18px monospace';x2.fillText('VOIDLINE  /  '+map.name,35,121);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const o=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));o.position.set(x,y,z);o.rotation.y=rot;root.add(o);}
+  sign(map.name,0,6,(-hd+.55),0,10,2.6);sign('OPERATION',0,6,(hd-.55),Math.PI,10,2.6);
+  for(const s of map.sites){const ring=new THREE.Mesh(new THREE.RingGeometry(s.radius-.07,s.radius,40),new THREE.MeshBasicMaterial({color:t.accent,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.set(s.x,.025,s.z);root.add(ring);const label=new THREE.Mesh(new THREE.PlaneGeometry(1.6,1.6),new THREE.MeshBasicMaterial({color:t.accent,transparent:true,opacity:.12,depthWrite:false}));label.rotation.x=-Math.PI/2;label.position.set(s.x,.024,s.z);root.add(label);sign('SITE '+s.id,s.x,3.2,s.z,0,2.5,1);}
++ // Upper floors are navigable architecture, not decorative window rectangles.
++ for(const g of map.structures||[]){
++  sign(g.label,g.x,g.height+2,g.z-g.d/2-.04,0,Math.min(g.w-1,6),.75);
++  // Windows occupy side walls only; both stair mouths and balcony door stay clear.
++  for(const side of [-1,1])for(let dz=-g.d/2+1.2;dz<g.d/2-1;dz+=2.2)
++   box(g.x+side*(g.w/2+.02),g.height+1.65,g.z+dz,.04,.85,1.1,glass);
++  for(const stair of g.stairs){
++   for(const side of [-1,1]){
++    // Handrails are visual only and sit outside the 2.8m stair width.
++    const length=stair.n*stair.run,angle=Math.atan2(stair.height,length);
++    const rail=box(g.x+side*1.65,stair.height/2+.9,(stair.z+stair.edge)/2,.06,.06,Math.hypot(length,stair.height),metal);
++    rail.rotation.x=stair.side*angle;
++    for(let i=0;i<=stair.n;i+=3)box(g.x+side*1.65,i*.25+.45,stair.z-stair.side*i*.8,.07,.9,.07,metal);
++   }
++  }
++ }
+  // Skyline and theme-specific structures are outside the collision boundary.
+  for(let i=0;i<12;i++){const x=-hw-5+i*(map.w+10)/11,z=-hd-6-(i%3)*3,h=6+(i*7%6);box(x,h/2,z,4.5,h,4,wall,false);box(x,h+.1,z,4.7,.2,4.2,accent,false);}
+  if(['port','rail','factory'].includes(t.style)){
+--- 1.0.1/public/maps.mjs
++++ 1.0.2/public/maps.mjs
+@@ -10,62 +10,81 @@
+  bastion:{wall:'#b4a28c',metal:'#555f57',crate:'#8b6b4b',floor:'#a79c86',sky:'#bfd1df',fog:'#c6bcac',sun:'#ffdfc1',accent:'#dfc488',style:'fort'}
+ };
+ 
+-const boundary=(w,d)=>[[-w/2,0,1,d+1,10,0],[w/2,0,1,d+1,10,0],[0,-d/2,w,1,10,0],[0,d/2,w,1,10,0]];
+-const site=(id,x,z)=>({id,x,z,radius:3.8});
+-function define(id,name,subtitle,w,d,layout,sites,spawns){
+- const map={id,name,subtitle,w,d,boxes:[...boundary(w,d),...layout],sites,spawns,theme:themes[id]};
+- for(const b of map.boxes)Object.freeze(b);for(const s of sites)Object.freeze(s);
+- Object.freeze(map.boxes);Object.freeze(sites);for(const s of Object.values(spawns))Object.freeze(s);Object.freeze(spawns);Object.freeze(map.theme);return Object.freeze(map);
++// Boxes: [x,z,width,depth,height,material,baseY]. Elevated solids use the same
++// authoritative collision representation on server, client, bullets and grenades.
++const boundary=(w,d)=>[[-w/2,0,1,d+1,12,0],[w/2,0,1,d+1,12,0],[0,-d/2,w,1,12,0],[0,d/2,w,1,12,0]];
++const B=(x,z,w,d,h=5,type=0,y=0)=>[x,z,w,d,h,type,y];
++function gallery(boxes,x,z,w,d,h,label){
++ const stairs=[];const slab=.22,step=.25,n=Math.round(h/step),run=.8;
++ // An open ground storey, a real upper floor and a projecting balcony.
++ boxes.push(B(x,z,w,d,slab,1,h-slab),B(x,z-d/2-1.5,w+2,3,slab,1,h-slab));
++ for(const sx of [-1,1])for(const sz of [-1,1])boxes.push(B(x+sx*(w/2-.25),z+sz*(d/2-.25),.5,.5,h,0));
++ // Rear upper-storey wall is split into two openings: stairs never end in a wall.
++ for(const sx of [-1,1]){
++  boxes.push(B(x+sx*(w/2-.15),z,.3,d,2.7,0,h));
++  boxes.push(B(x+sx*(w/2-1.35),z+d/2,2.1,.3,2.7,0,h));
++  boxes.push(B(x+sx*(w/2+.85),z-d/2-1.5,.3,3,.95,1,h));
++  boxes.push(B(x+sx*(w/2-1.3),z-d/2-3,2.4,.25,.95,1,h));
++ }
++ // Solid ceiling over the room; balcony is open to the sky. Back/front stairs
++ // provide two independent accesses and a ground-floor through passage.
++ boxes.push(B(x,z,w,d,.2,0,h+2.7));
++ for(const side of [-1,1]){
++  const edge=side===1?z+d/2:z-d/2-3;
++  const start=edge+side*n*run;
++  for(let i=0;i<n;i++)boxes.push(B(x,start-side*(i+.5)*run,2.8,run+.015,(i+1)*step,3));
++  stairs.push({x,z:start,edge,side,run,n,height:h,width:2.8});
++ }
++ return {label,x,z,w,d,height:h,stairs,balcony:{x,z:z-d/2-1.5,w:w+2,d:3}};
++}
++function define(id,name,subtitle,w,d,layout,buildings,surface){
++ const boxes=[...boundary(w,d),...layout];
++ const structures=buildings.map(([x,z,bw,bd,h,label])=>gallery(boxes,x,z,bw,bd,h,label));
++ const sites=[{id:'A',x:-w*.29,z:-d*.24,radius:3.8},{id:'B',x:w*.29,z:-d*.21,radius:3.8}];
++ // Site cover: a low forward planter/crate and an offset flank stack. Neither
++ // seals the plant disk; attackers can split either side and defenders can rotate.
++ for(const [i,s]of sites.entries()){
++  boxes.push(B(s.x,s.z+5.3,4.5,2,1.25,2));
++  boxes.push(B(s.x+(i?-5.3:5.3),s.z-.4,2,4.5,1.6,['port','rail','factory'].includes(themes[id].style)?1:2));
++ }
++ const attackZ={terminal:29,courtyard:32,dockyard:31,foundry:29,oasis:34,depot:28,frost:30,bastion:31}[id];
++ const map={id,name,subtitle,w,d,boxes,sites,spawns:{T:[0,attackZ],CT:[0,-d/2+7]},theme:themes[id],structures,surface};
++ const freeze=o=>{if(o&&typeof o==='object'&&!Object.isFrozen(o)){for(const v of Object.values(o))freeze(v);Object.freeze(o);}return o;};
++ return freeze(map);
+ }
+ export const MAPS=Object.freeze({
+- terminal:define('terminal','TERMINAL','Городской терминал · улица, рынок, грузовой обход',76,100,[
+- [-21,-29,18,18,7,0],[16,-32,15,12,8,0],[-5,-13,14,9,5,0],[21,-10,15,20,7,0],
+- [-25,2,10,18,6,0],[-8,12,18,13,7,0],[18,20,20,13,8,0],[-22,30,16,10,5,0],
+- [6,0,4,5,2,2],[2,32,3,6,2,2],[-19,-12,3,3,2,2],[28,4,3,5,2,1],
+- [-3,-30,4,4,2,2],[30,-30,3,6,3,1]
+- ],[site('A',-28,-12),site('B',28,13)],{T:[5,43],CT:[-2,-43]}),
+- courtyard:define('courtyard','COURTYARD','Старый квартал · извилистые переулки и два двора',92,84,[
+- [-31,-23,16,20,7,0],[-10,-28,15,10,6,0],[22,-25,23,14,8,0],
+- [-28,7,19,13,7,0],[0,-6,14,16,8,0],[24,5,18,11,6,0],
+- [-6,25,24,12,7,0],[30,26,14,12,7,0],[-11,9,4,4,1.3,2],
+- [-37,25,3,5,2,2],[15,-6,3,4,2,2],[3,-27,3,3,1.8,2]
+- ],[site('A',-34,-5),site('B',29,-9)],{T:[-20,35],CT:[6,-35]}),
+- dockyard:define('dockyard','DOCKYARD','Грузовой порт · длинная набережная и контейнерный лабиринт',110,76,[
+- [-33,-13,6,24,3.4,1],[-21,7,6,26,3.4,1],[-8,-14,6,24,6.8,1],
+- [5,10,6,22,3.4,1],[18,-12,6,24,3.4,1],[31,10,6,24,3.4,1],
+- [43,-20,10,10,7,0],[-44,17,8,10,6,0],[46,9,4,6,2,2],
+- [-1,27,4,3,2,2],[-45,-22,4,4,2,2]
+- ],[site('A',-43,-5),site('B',43,-3)],{T:[15,31],CT:[-13,-31]}),
+- foundry:define('foundry','FOUNDRY','Литейный комплекс · центральный цех и боковые галереи',84,104,[
+- [0,-3,24,28,11,0],[-27,-27,12,15,6,0],[25,27,13,18,6,0],
+- [-28,18,10,19,5,1],[27,-25,10,13,5,1],[-8,27,4,10,3,1],
+- [8,-30,4,10,3,1],[-27,-3,5,7,2,2],[27,2,6,6,2,2],
+- [-7,39,3,3,2,2],[9,-42,3,3,2,2]
+- ],[site('A',-28,-13),site('B',28,15)],{T:[-7,45],CT:[7,-45]}),
+- oasis:define('oasis','OASIS','Пустынный посёлок · открытый оазис и боковой базар',108,92,[
+- [-35,-24,18,16,6,0],[-29,5,14,18,5,0],[-36,29,16,10,5,0],
+- [31,-23,20,13,7,0],[37,2,12,16,5,0],[29,26,20,13,6,0],
+- [-5,-23,9,9,4,0],[3,22,12,10,4,0],[-3,0,8,6,1.1,2],
+- [15,-6,3,3,1.6,2],[-13,11,3,4,1.8,2],[-43,-4,3,4,2,2]
+- ],[site('A',-40,-10),site('B',37,15)],{T:[0,39],CT:[10,-39]}),
+- depot:define('depot','DEPOT','Железнодорожное депо · четыре пути и сервисный двор',70,128,[
+- [-22,-31,5,25,4,1],[-22,5,5,23,4,1],[-22,37,5,19,4,1],
+- [-7,-12,5,29,4,1],[-7,32,5,26,4,1],[9,-36,5,24,4,1],
+- [9,3,5,24,4,1],[23,26,9,22,7,0],[23,-18,8,14,6,0],
+- [1,-50,3,3,2,2],[0,51,3,3,2,2],[21,3,3,3,2,2]
+- ],[site('A',-23,-15),site('B',23,-37)],{T:[0,57],CT:[-5,-57]}),
+- frost:define('frost','FROST','Полярная станция · зигзаг ветровых стен и научные блоки',100,100,[
+- [-31,-25,20,16,6,0],[23,-32,22,12,6,0],[-4,-12,18,7,4,1],
+- [-26,5,14,13,6,0],[18,9,18,18,7,0],[-11,30,24,12,5,0],
+- [35,30,10,14,6,0],[-1,8,7,5,2.6,1],[-38,28,4,4,2,2],
+- [35,-9,5,4,2,2],[4,-33,4,4,2,2]
+- ],[site('A',-35,-10),site('B',35,10)],{T:[-9,43],CT:[-2,-43]}),
+- bastion:define('bastion','BASTION','Крепость · кольцевая оборона и разнесённые ворота',96,112,[
+- [-22,-24,20,4,8,0],[19,-24,22,4,8,0],[-22,24,20,4,8,0],[19,24,22,4,8,0],
+- [-32,-12,4,20,8,0],[-32,17,4,10,8,0],[32,-17,4,10,8,0],[32,12,4,20,8,0],
+- [-7,-2,9,14,10,0],[11,6,10,13,9,0],[-40,-39,8,12,10,0],[39,38,8,12,10,0],
+- [-18,6,4,4,2,2],[20,-9,4,4,2,2],[0,38,4,5,2,2]
+- ],[site('A',-22,-12),site('B',23,14)],{T:[-12,49],CT:[10,-49]})
++ terminal:define('terminal','TERMINAL','Терминал · кассовый зал, балконы диспетчерской и рынок',76,100,[
++ B(0,-28,12,9,6),B(-23,-36,9,5,3),B(24,-34,8,5,3),B(-31,0,8,18,6),B(31,5,8,18,6),B(-28,34,8,10,5),B(28,34,8,10,5),
++ B(0,5,10,18,6),B(-7,32,7,4,2,2),B(10,28,6,6,2,2),B(-27,-15,3,3,1.1,2),B(27,-12,3,3,1.1,2)
++ ],[[-17,10,9,8,3,'Диспетчерская'],[19,13,8,7,3.5,'Рынок']], 'stone'),
++ courtyard:define('courtyard','COURTYARD','Старый квартал · два двора, жилые этажи и аркады',92,84,[
++ B(0,-24,17,9,7),B(-36,-28,8,10,6),B(36,-28,8,10,6),B(-40,0,6,12,5),B(40,0,6,12,5),B(-35,29,10,8,5),B(35,29,10,8,5),B(0,8,7,23,6),
++ B(-29,-8,4,3,1,2),B(29,-6,3,4,1,2),B(-8,28,8,4,3),B(10,28,7,4,3)
++ ],[[-23,8,12,7,3,'Дом с аркадой'],[24,10,9,8,3,'Гостевой дом']], 'stone'),
++ dockyard:define('dockyard','DOCKYARD','Порт · контейнерные петли, склад и капитанский мостик',110,76,[
++ B(0,-22,20,6,5,1),B(-42,-25,8,5,3.4,1),B(42,-25,8,5,3.4,1),B(-10,-3,5,18,3.4,1),
++ B(7,8,5,20,3.4,1),B(-43,10,8,20,3.4,1),B(43,10,8,20,3.4,1),B(-40,26,8,8,5),B(40,26,8,8,5),B(-21,25,7,4,2,2),B(24,25,6,4,2,2)
++ ],[[-28,5,12,7,3,'Склад 04'],[28,6,8,6,3.5,'Капитанский мостик']], 'metal'),
++ foundry:define('foundry','FOUNDRY','Литейная · печной зал, ремонтный этаж и галерея',84,104,[
++ B(0,-29,15,10,10),B(-31,-39,6,5,5,1),B(31,-37,6,6,5,1),B(-7,5,5,20,7),B(7,5,5,20,7),
++ B(-32,14,8,22,6),B(32,18,8,22,6),B(-29,40,10,10,5),B(29,40,10,10,5),B(0,34,12,5,2,2),B(-30,-15,3,4,1.2,2),B(30,-13,3,4,1.2,2)
++ ],[[-20,12,9,10,3.5,'Ремонтный этаж'],[21,14,8,8,4,'Галерея печи']], 'metal'),
++ oasis:define('oasis','OASIS','Оазис · базар, караван-сарай и открытая площадь',108,92,[
++ B(0,-28,13,8,6),B(-41,-31,6,6,5),B(41,-29,6,6,5),B(-3,0,8,6,1.1,2),
++ B(-10,23,6,6,4),B(10,23,6,6,4),B(-43,5,8,18,5),B(43,7,8,18,5),B(-40,32,10,8,5),B(40,32,10,8,5),B(-34,-13,3,3,1,2),B(34,-10,3,3,1,2)
++ ],[[-27,9,11,8,3,'Караван-сарай'],[27,11,12,7,3,'Базарные комнаты']], 'sand'),
++ depot:define('depot','DEPOT','Депо · вагоны, сигнальная башня и ремонтный ангар',70,128,[
++ B(0,-38,10,12,5,1),B(-25,-46,5,9,4,1),B(25,-43,5,9,4,1),B(-6,-7,5,17,4,1),
++ B(6,9,5,20,4,1),B(-26,21,5,20,5,1),B(26,30,5,20,5,1),B(-23,50,12,10,6),B(23,50,12,10,6),B(-7,46,5,6,2,2),B(7,46,5,6,2,2)
++ ],[[-17,15,7,10,3.5,'Сигнальная башня'],[17,22,8,11,3,'Ремонтный ангар']], 'metal'),
++ frost:define('frost','FROST','Полярная станция · ветровые экраны, лаборатория и обсерватория',100,100,[
++ B(0,-29,18,8,6),B(-37,-35,7,5,4),B(37,-32,7,5,4),B(-9,-3,5,13,4,1),B(9,13,5,16,4,1),
++ B(-39,14,10,20,6),B(39,12,10,20,6),B(-34,37,12,10,5),B(34,37,12,10,5),B(-9,34,8,5,2,2),B(10,34,6,5,2,2)
++ ],[[-25,10,12,9,3,'Лаборатория'],[25,14,9,9,4,'Обсерватория']], 'snow'),
++ bastion:define('bastion','BASTION','Бастион · бастионные дворы, казарма и надвратная галерея',96,112,[
++ B(0,-31,18,5,9),B(-37,-40,5,9,9),B(37,-38,5,9,9),B(-8,-4,4,19,7),B(8,5,4,19,7),
++ B(-36,20,6,24,8),B(36,22,6,24,8),B(-32,43,12,12,8),B(32,43,12,12,8),B(0,37,14,5,5),B(-31,-17,3,3,1.2,2),B(31,-14,3,3,1.2,2)
++ ],[[-24,14,11,10,4,'Казарма'],[24,18,10,8,3.5,'Надвратная галерея']], 'stone')
+ });
+ export const validMap=id=>typeof id==='string'&&Object.hasOwn(MAPS,id);
+ export const getMap=id=>validMap(id)?MAPS[id]:MAPS.terminal;
+--- 1.0.1/public/navigation.mjs
++++ 1.0.2/public/navigation.mjs
+@@ -1,8 +1,15 @@
+-import {blocked} from './shared.mjs';
++import {blocked,feetY} from './shared.mjs';
++const edgeCache=new WeakMap();
+ // Shared BFS with segment checks. No hard-coded old 38x48 arena limits.
+-export function route(map,p,t,lane=0){
+- const step=2,key=(x,z)=>x+','+z, sx=Math.round(p.x/step),sz=Math.round(p.z/step);
++function groundRoute(map,p,t,lane=0){
++ const step=2,key=(x,z)=>x+','+z;let sx=Math.round(p.x/step),sz=Math.round(p.z/step);
+  const clear=(a,b,c,d)=>{const n=Math.ceil(Math.hypot(c-a,d-b)/.4);for(let i=0;i<=n;i++)if(blocked(a+(c-a)*i/Math.max(1,n),b+(d-b)*i/Math.max(1,n),.48,map.boxes))return false;return true;};
++ const candidates=[];for(let dx=-2;dx<=2;dx++)for(let dz=-2;dz<=2;dz++)candidates.push([sx+dx,sz+dz]);
++ candidates.sort((a,b)=>Math.hypot(a[0]*step-p.x,a[1]*step-p.z)-Math.hypot(b[0]*step-p.x,b[1]*step-p.z));
++ const first=candidates.find(([x,z])=>!blocked(x*step,z*step,.48,map.boxes)&&clear(p.x,p.z,x*step,z*step));
++ if(!first)return [];[sx,sz]=first;
++ let edges=edgeCache.get(map);if(!edges){edges=new Map();edgeCache.set(map,edges);}
++ const gridClear=(x,z,a,b)=>{const k=[key(x,z),key(a,b)].sort().join(";");if(!edges.has(k))edges.set(k,clear(x*step,z*step,a*step,b*step));return edges.get(k);};
+  const queue=[[sx,sz]],seen=new Map([[key(sx,sz),null]]);let end=null,best=Infinity;
+  for(let n=0;n<queue.length;n++){
+   const [x,z]=queue[n],k=key(x,z),dist=Math.hypot(x*step-t.x,z*step-t.z);
+@@ -10,13 +17,56 @@
+   if(dist<2.2&&clear(x*step,z*step,t.x,t.z)){end=k;break;}
+   for(const [dx,dz] of (lane===1?[[-1,0],[0,-1],[0,1],[1,0]]:lane===2?[[0,-1],[0,1],[1,0],[-1,0]]:[[1,0],[-1,0],[0,1],[0,-1]])){
+    const a=x+dx,b=z+dz,k2=key(a,b);
+-   if(Math.abs(a*step)>map.w/2-1||Math.abs(b*step)>map.d/2-1||seen.has(k2)||!clear(x*step,z*step,a*step,b*step))continue;
++   if(Math.abs(a*step)>map.w/2-1||Math.abs(b*step)>map.d/2-1||seen.has(k2)||!gridClear(x,z,a,b))continue;
+    seen.set(k2,k);queue.push([a,b]);
+   }
+  }
+  const out=[];while(end&&seen.get(end)!==null){out.unshift(end.split(',').map(Number).map(n=>n*step));end=seen.get(end);}
++ if(Math.hypot(sx*step-p.x,sz*step-p.z)>.02)out.unshift([sx*step,sz*step]);
+  // Starting at an arbitrary coordinate must connect to the grid without cutting a wall.
+  if(out.length&&!clear(p.x,p.z,...out[0]))return [];
+  const last=out.at(-1)||[p.x,p.z];if(clear(...last,t.x,t.z))out.push([t.x,t.z]);
+  return out;
+ }
++
++// Elevated destinations route through explicit stair portals. Ground circulation
++// remains on its own layer, so a bot cannot plan through a ceiling or teleport.
++export function route(map,p,t,lane=0){
++ const pf=Number.isFinite(p.y)?feetY(p):0,tf=Number.isFinite(t.y)?feetY(t):0;
++ const locate=(q,h)=>(map.structures||[]).find(g=>h>.1&&h<=g.height+.15&&(
++  (Math.abs(q.x-g.x)<g.w/2+1&&q.z>=g.z-g.d/2-3.4&&q.z<=g.z+g.d/2+.4)||
++  g.stairs.some(st=>Math.abs(q.x-g.x)<1.8&&q.z>=Math.min(st.z,st.edge)-.4&&q.z<=Math.max(st.z,st.edge)+.4)));
++ const start=locate(p,pf),end=locate(t,tf);
++ if(!start&&!end)return groundRoute(map,p,t,lane);
++ const entrance=(g,st)=>({x:g.x,z:st.z+st.side*.8});
++ const onStair=(q,g,st)=>Math.abs(q.x-g.x)<1.8&&q.z>=Math.min(st.z,st.edge)-.4&&q.z<=Math.max(st.z,st.edge)+.4;
++ const stairPath=(g,st,up,q=null)=>{
++  const points=[];const n=st.n*2;
++  for(let i=0;i<=n;i++){
++   const a=up?i/n:1-i/n,z=st.z+(st.edge-st.z)*a;
++   if(q&&onStair(q,g,st)&&((up&&st.side*(z-q.z)>.2)||(!up&&st.side*(z-q.z)<-.2)))continue;
++   points.push([g.x,z]);
++  }
++  if(up)points.push([g.x,st.edge-st.side*.55]);else{const e=entrance(g,st);points.push([e.x,e.z]);}
++  return points;
++ };
++ if(start&&start===end){
++  const st=start.stairs.find(st=>onStair(p,start,st));
++  return [...(st?stairPath(start,st,true,p):[]),[start.x,start.z],[t.x,t.z]];
++ }
++ let prefix=[],from={x:p.x,z:p.z};
++ if(start){
++  const st=start.stairs.find(st=>onStair(p,start,st))||[...start.stairs].sort((a,b)=>Math.hypot(t.x-start.x,t.z-a.z)-Math.hypot(t.x-start.x,t.z-b.z))[0];
++  if(!onStair(p,start,st))prefix.push([start.x,start.z],[start.x,st.edge-st.side*.55]);
++  prefix.push(...stairPath(start,st,false,p));from=entrance(start,st);
++ }
++ if(!end)return [...prefix,...groundRoute(map,from,t,lane)];
++ let best=null,bestDistance=Infinity;
++ for(const st of end.stairs){
++  const e=entrance(end,st),path=groundRoute(map,from,e,lane);
++  if(!path.length||Math.hypot(path.at(-1)[0]-e.x,path.at(-1)[1]-e.z)>.05)continue;
++  let d=0,prev=from;for(const [x,z]of path){d+=Math.hypot(x-prev.x,z-prev.z);prev={x,z};}
++  if(d<bestDistance){bestDistance=d;best=[...path,...stairPath(end,st,true),[end.x,end.z],[t.x,t.z]];}
++ }
++ return best?[...prefix,...best]:prefix;
++}
+--- 1.0.1/public/shared.mjs
++++ 1.0.2/public/shared.mjs
+@@ -22,12 +22,44 @@
+   },
+ };
+ export const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+-export function blocked(x, z, r = 0.36, boxes = BOXES) {
+-  return boxes.some((b) => Math.abs(x - b[0]) < b[2] / 2 + r && Math.abs(z - b[1]) < b[3] / 2 + r);
+-}
+-export function move(p, dx, dz, boxes = BOXES) {
+-  if (!blocked(p.x + dx, p.z, .36, boxes)) p.x += dx;
+-  if (!blocked(p.x, p.z + dz, .36, boxes)) p.z += dz;
++export const boxBase = b => b[6] || 0;
++export const boxTop = b => boxBase(b) + b[4];
++export function supportAt(x,z,boxes=BOXES,maxY=Infinity,r=0){
++ let h=0;
++ for(const b of boxes)if(boxTop(b)<=maxY+1e-6&&Math.abs(x-b[0])<b[2]/2+r&&Math.abs(z-b[1])<b[3]/2+r)h=Math.max(h,boxTop(b));
++ return h;
++}
++export function blocked(x,z,r=.36,boxes=BOXES,feet=0,height=1.87){
++ return boxes.some(b=>Math.abs(x-b[0])<b[2]/2+r&&Math.abs(z-b[1])<b[3]/2+r&&boxTop(b)>feet+.015&&boxBase(b)<feet+height-.015);
++}
++export function isGrounded(p,boxes=BOXES){
++ return Math.abs(feetY(p)-supportAt(p.x,p.z,boxes,feetY(p)+.025,.365))<.035&&(p.vy||0)<=.05;
++}
++export function move(p,dx,dz,boxes=BOXES){
++ // Substeps prevent tunnelling. Only real stair-size rises can be auto-stepped;
++ // crates, walls and the undersides of storeys stay solid.
++ const n=Math.max(1,Math.ceil(Math.hypot(dx,dz)/.14)),hasY=Number.isFinite(p.y);
++ for(let i=0;i<n;i++)for(const axis of ['x','z']){
++  const x=p.x+(axis==='x'?dx/n:0),z=p.z+(axis==='z'?dz/n:0);
++  const feet=hasY?feetY(p):0,ground=hasY&&isGrounded(p,boxes);
++  const top=supportAt(x,z,boxes,feet+(ground?.27:0),.365);
++  const rise=ground&&top>feet+.005&&top<=feet+.27;
++  const nextFeet=rise?top:feet;
++  if(!blocked(x,z,.36,boxes,nextFeet,hasY?eyeHeight(p)+.22:1.87)){
++   p.x=x;p.z=z;if(rise)p.y=nextFeet+eyeHeight(p);
++  }
++ }
++}
++export function verticalStep(p,dt,boxes=BOXES,gravity=15){
++ const feet=feetY(p),next=feet+(p.vy-gravity*dt)*dt;
++ p.vy-=gravity*dt;
++ let target=next;
++ if(p.vy<=0){const floor=supportAt(p.x,p.z,boxes,feet+.03,.365);if(next<=floor){target=floor;p.vy=0;}}
++ else{
++  const head=feet+eyeHeight(p)+.22,newHead=next+eyeHeight(p)+.22;
++  for(const b of boxes)if(Math.abs(p.x-b[0])<b[2]/2+.34&&Math.abs(p.z-b[1])<b[3]/2+.34&&boxBase(b)>=head-.01&&boxBase(b)<newHead){target=Math.min(target,boxBase(b)-eyeHeight(p)-.22);p.vy=0;}
++ }
++ p.y=Math.max(0,target)+eyeHeight(p);
+ }
+ export function rayBox(o, d, min, max) {
+   let near = 0,
+@@ -51,7 +83,7 @@
+   for (const b of boxes)
+     best = Math.min(
+       best,
+-      rayBox(o, d, [b[0] - b[2] / 2, 0, b[1] - b[3] / 2], [b[0] + b[2] / 2, b[4], b[1] + b[3] / 2]),
++      rayBox(o, d, [b[0] - b[2] / 2, boxBase(b), b[1] - b[3] / 2], [b[0] + b[2] / 2, boxTop(b), b[1] + b[3] / 2]),
+     );
+   return best;
+ }
+--- 1.0.1/public/utilities.mjs
++++ 1.0.2/public/utilities.mjs
+@@ -1,4 +1,4 @@
+-import { BOXES, clamp, wallDistance, direction } from "./shared.mjs";
++import { BOXES, clamp, wallDistance, direction, boxBase, boxTop } from "./shared.mjs";
+ export const UTILITY = Object.freeze({
+   he: { name: "HE / Осколочная", price: 300, max: 1, fuse: 1600, color: "#8b9b50", radius: 7.5 },
+   flash: {
+@@ -32,8 +32,8 @@
+ export const utilityCount = (p) => Object.values(p.grenades || {}).reduce((a, b) => a + b, 0);
+ const R = 0.095;
+ function sweepBox(o, v, b) {
+-  const min = [b[0] - b[2] / 2 - R, -R, b[1] - b[3] / 2 - R],
+-    max = [b[0] + b[2] / 2 + R, b[4] + R, b[1] + b[3] / 2 + R];
++  const min = [b[0] - b[2] / 2 - R, boxBase(b) - R, b[1] - b[3] / 2 - R],
++    max = [b[0] + b[2] / 2 + R, boxTop(b) + R, b[1] + b[3] / 2 + R];
+   let near = 0,
+     far = 1,
+     normal = [0, 0, 0];
+@@ -147,10 +147,10 @@
+     dot = dist < 0.01 ? 1 : f.reduce((s, x, i) => s + (x * v[i]) / dist, 0);
+   return clamp(Math.min(1, (16 - dist) / 10) * (0.22 + 0.78 * Math.max(0, dot)), 0, 1);
+ }
+-export function floorAt(x, z, boxes = BOXES) {
++export function floorAt(x, z, boxes = BOXES, maxY=Infinity) {
+   let h = 0;
+   for (const b of boxes)
+-    if (Math.abs(x - b[0]) < b[2] / 2 && Math.abs(z - b[1]) < b[3] / 2) h = Math.max(h, b[4]);
++    if (boxTop(b)<=maxY+.001&&Math.abs(x - b[0]) < b[2] / 2 && Math.abs(z - b[1]) < b[3] / 2) h = Math.max(h, boxTop(b));
+   return h;
+ }
+ export function fireCells(g, boxes = BOXES) {
+@@ -161,7 +161,7 @@
+       if (Math.hypot(x, z) > 3.2) continue;
+       const px = g.x + x,
+         pz = g.z + z,
+-        h = floorAt(px, pz, boxes);
++        h = floorAt(px, pz, boxes,base+.45);
+       if (Math.abs(h - base) > 0.45 || !lineVisible([g.x, base + 0.2, g.z], [px, h + 0.2, pz], boxes))
+         continue;
+       cells.push({ x: px, y: h + 0.03, z: pz });
+--- 1.0.1/public/utility-fx.mjs
++++ 1.0.2/public/utility-fx.mjs
+@@ -156,19 +156,19 @@
+   }
+   function event(e) {
+     if (e.type === "bounce") {
+-      sound("hit", true);
++      sound("bounce",{pos:e,key:"bounce",cooldown:.07});
+       return;
+     }
+     if (e.type === "throw") {
+-      sound("throw", true);
++      sound("throw",{pos:e});
+       return;
+     }
+     if (e.type === "extinguish") {
+-      sound("hiss", true);
++      sound("hiss",{pos:e});
+       return;
+     }
+     if (e.type !== "detonate") return;
+-    sound(e.kind === "he" ? "explosion" : e.kind === "flash" ? "flash" : "hiss", false);
++    sound(e.kind === "he" ? "explosion" : e.kind === "flash" ? "flash" : "hiss",{pos:e,range:e.kind==="he"?85:45});
+     if (["he", "flash"].includes(e.kind)) {
+       const material = new THREE.MeshBasicMaterial({
+         color: e.kind === "he" ? "#ffb25a" : "#ffffff",
+--- 1.0.1/public/assets/audio/manifest.json
++++ 1.0.2/public/assets/audio/manifest.json
+@@ -0,0 +1,241 @@
++{
++  "license": "CC0-1.0; original synthesis, no third-party recordings",
++  "sampleRate": 44100,
++  "sounds": {
++    "shot-rifle": {
++      "file": "shot-rifle.wav",
++      "seconds": 0.4,
++      "bytes": 35324
++    },
++    "shot-ak47": {
++      "file": "shot-ak47.wav",
++      "seconds": 0.5,
++      "bytes": 44144
++    },
++    "shot-m4a1s": {
++      "file": "shot-m4a1s.wav",
++      "seconds": 0.35,
++      "bytes": 30914
++    },
++    "shot-awp": {
++      "file": "shot-awp.wav",
++      "seconds": 0.81,
++      "bytes": 71486
++    },
++    "shot-ssg08": {
++      "file": "shot-ssg08.wav",
++      "seconds": 0.59,
++      "bytes": 52082
++    },
++    "shot-mp9": {
++      "file": "shot-mp9.wav",
++      "seconds": 0.32,
++      "bytes": 28268
++    },
++    "shot-p90": {
++      "file": "shot-p90.wav",
++      "seconds": 0.33,
++      "bytes": 29150
++    },
++    "shot-pistol": {
++      "file": "shot-pistol.wav",
++      "seconds": 0.32,
++      "bytes": 28268
++    },
++    "shot-glock": {
++      "file": "shot-glock.wav",
++      "seconds": 0.36,
++      "bytes": 31796
++    },
++    "shot-deagle": {
++      "file": "shot-deagle.wav",
++      "seconds": 0.58,
++      "bytes": 51200
++    },
++    "step-stone-0": {
++      "file": "step-stone-0.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-stone-1": {
++      "file": "step-stone-1.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-stone-2": {
++      "file": "step-stone-2.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-metal-0": {
++      "file": "step-metal-0.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-metal-1": {
++      "file": "step-metal-1.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-metal-2": {
++      "file": "step-metal-2.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-sand-0": {
++      "file": "step-sand-0.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-sand-1": {
++      "file": "step-sand-1.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-sand-2": {
++      "file": "step-sand-2.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-snow-0": {
++      "file": "step-snow-0.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-snow-1": {
++      "file": "step-snow-1.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "step-snow-2": {
++      "file": "step-snow-2.wav",
++      "seconds": 0.23,
++      "bytes": 20330
++    },
++    "reload-rifle": {
++      "file": "reload-rifle.wav",
++      "seconds": 1.05,
++      "bytes": 92654
++    },
++    "reload-pistol": {
++      "file": "reload-pistol.wav",
++      "seconds": 1.05,
++      "bytes": 92654
++    },
++    "reload-sniper": {
++      "file": "reload-sniper.wav",
++      "seconds": 1.05,
++      "bytes": 92654
++    },
++    "round": {
++      "file": "round.wav",
++      "seconds": 0.54,
++      "bytes": 47672
++    },
++    "live": {
++      "file": "live.wav",
++      "seconds": 0.4,
++      "bytes": 35324
++    },
++    "win": {
++      "file": "win.wav",
++      "seconds": 0.82,
++      "bytes": 72368
++    },
++    "loss": {
++      "file": "loss.wav",
++      "seconds": 0.72,
++      "bytes": 63548
++    },
++    "plant": {
++      "file": "plant.wav",
++      "seconds": 0.54,
++      "bytes": 47672
++    },
++    "defuse": {
++      "file": "defuse.wav",
++      "seconds": 0.58,
++      "bytes": 51200
++    },
++    "chat": {
++      "file": "chat.wav",
++      "seconds": 0.39,
++      "bytes": 34442
++    },
++    "buy": {
++      "file": "buy.wav",
++      "seconds": 0.35,
++      "bytes": 30914
++    },
++    "beep": {
++      "file": "beep.wav",
++      "seconds": 0.28,
++      "bytes": 24740
++    },
++    "hit": {
++      "file": "hit.wav",
++      "seconds": 0.28,
++      "bytes": 24740
++    },
++    "scope": {
++      "file": "scope.wav",
++      "seconds": 0.28,
++      "bytes": 24740
++    },
++    "explosion": {
++      "file": "explosion.wav",
++      "seconds": 1.3,
++      "bytes": 114704
++    },
++    "flash": {
++      "file": "flash.wav",
++      "seconds": 0.5,
++      "bytes": 44144
++    },
++    "hiss": {
++      "file": "hiss.wav",
++      "seconds": 0.9,
++      "bytes": 79424
++    },
++    "throw": {
++      "file": "throw.wav",
++      "seconds": 0.19,
++      "bytes": 16802
++    },
++    "bounce": {
++      "file": "bounce.wav",
++      "seconds": 0.18,
++      "bytes": 15920
++    },
++    "knife": {
++      "file": "knife.wav",
++      "seconds": 0.22,
++      "bytes": 19448
++    },
++    "hurt": {
++      "file": "hurt.wav",
++      "seconds": 0.22,
++      "bytes": 19448
++    },
++    "equip": {
++      "file": "equip.wav",
++      "seconds": 0.27,
++      "bytes": 23858
++    },
++    "land": {
++      "file": "land.wav",
++      "seconds": 0.27,
++      "bytes": 23858
++    },
++    "jump": {
++      "file": "jump.wav",
++      "seconds": 0.13,
++      "bytes": 11510
++    },
++    "dry": {
++      "file": "dry.wav",
++      "seconds": 0.1,
++      "bytes": 8864
++    }
++  }
++}
+--- 1.0.1/tests/game.test.mjs
++++ 1.0.2/tests/game.test.mjs
+@@ -8,7 +8,9 @@
+   assert.equal(blocked(0, 20), false);
+   const p = { x: 0, z: 2.1 };
+   move(p, 0, -0.5);
+-  assert.equal(p.z, 2.1);
++  // Substepped movement advances to the wall, but must not penetrate it.
++  assert.ok(p.z <= 2.1 && p.z >= 1.86);
++  assert.equal(blocked(p.x,p.z),false);
+ });
+ test("ray hits front surface and misses parallel geometry", () => {
+   assert.equal(rayBox([0, 1, 5], [0, 0, -1], [-1, 0, -1], [1, 2, 1]), 4);
+--- 1.0.1/tests/map-balance-1.0.2.json
++++ 1.0.2/tests/map-balance-1.0.2.json
+@@ -0,0 +1,965 @@
++{
++  "method": "8-neighbour 1m Dijkstra plus physical stair/upper-storey portal shortcuts, swept ground collision radius .36m, arrival at site disk, uniform 5.2m/s, no combat or special-event jumps, rounded milliseconds",
++  "results": [
++    {
++      "map": "terminal",
++      "site": "A",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 21.799,
++          "seconds": 4.192
++        },
++        {
++          "slot": -3,
++          "metres": 23.627,
++          "seconds": 4.544
++        },
++        {
++          "slot": 0,
++          "metres": 26.627,
++          "seconds": 5.121
++        },
++        {
++          "slot": 3,
++          "metres": 29.627,
++          "seconds": 5.698
++        },
++        {
++          "slot": 6,
++          "metres": 32.627,
++          "seconds": 6.275
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 56.385,
++          "seconds": 10.843
++        },
++        {
++          "slot": -3,
++          "metres": 57.627,
++          "seconds": 11.082
++        },
++        {
++          "slot": 0,
++          "metres": 58.87,
++          "seconds": 11.321
++        },
++        {
++          "slot": 3,
++          "metres": 60.113,
++          "seconds": 11.56
++        },
++        {
++          "slot": 6,
++          "metres": 61.355,
++          "seconds": 11.799
++        }
++      ],
++      "minimumCTLead": 4.568
++    },
++    {
++      "map": "terminal",
++      "site": "B",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 33.87,
++          "seconds": 6.513
++        },
++        {
++          "slot": -3,
++          "metres": 30.87,
++          "seconds": 5.937
++        },
++        {
++          "slot": 0,
++          "metres": 27.87,
++          "seconds": 5.36
++        },
++        {
++          "slot": 3,
++          "metres": 26.042,
++          "seconds": 5.008
++        },
++        {
++          "slot": 6,
++          "metres": 24.799,
++          "seconds": 4.769
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 58.355,
++          "seconds": 11.222
++        },
++        {
++          "slot": -3,
++          "metres": 57.113,
++          "seconds": 10.983
++        },
++        {
++          "slot": 0,
++          "metres": 55.87,
++          "seconds": 10.744
++        },
++        {
++          "slot": 3,
++          "metres": 54.627,
++          "seconds": 10.505
++        },
++        {
++          "slot": 6,
++          "metres": 53.385,
++          "seconds": 10.266
++        }
++      ],
++      "minimumCTLead": 3.753
++    },
++    {
++      "map": "courtyard",
++      "site": "A",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 23.971,
++          "seconds": 4.61
++        },
++        {
++          "slot": -3,
++          "metres": 26.971,
++          "seconds": 5.187
++        },
++        {
++          "slot": 0,
++          "metres": 29.971,
++          "seconds": 5.764
++        },
++        {
++          "slot": 3,
++          "metres": 32.971,
++          "seconds": 6.34
++        },
++        {
++          "slot": 6,
++          "metres": 35.971,
++          "seconds": 6.917
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 60.971,
++          "seconds": 11.725
++        },
++        {
++          "slot": -3,
++          "metres": 58.698,
++          "seconds": 11.288
++        },
++        {
++          "slot": 0,
++          "metres": 59.941,
++          "seconds": 11.527
++        },
++        {
++          "slot": 3,
++          "metres": 61.184,
++          "seconds": 11.766
++        },
++        {
++          "slot": 6,
++          "metres": 62.426,
++          "seconds": 12.005
++        }
++      ],
++      "minimumCTLead": 4.371
++    },
++    {
++      "map": "courtyard",
++      "site": "B",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 36.213,
++          "seconds": 6.964
++        },
++        {
++          "slot": -3,
++          "metres": 33.213,
++          "seconds": 6.387
++        },
++        {
++          "slot": 0,
++          "metres": 30.213,
++          "seconds": 5.81
++        },
++        {
++          "slot": 3,
++          "metres": 27.213,
++          "seconds": 5.233
++        },
++        {
++          "slot": 6,
++          "metres": 24.213,
++          "seconds": 4.656
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 60.598,
++          "seconds": 11.653
++        },
++        {
++          "slot": -3,
++          "metres": 58.184,
++          "seconds": 11.189
++        },
++        {
++          "slot": 0,
++          "metres": 56.941,
++          "seconds": 10.95
++        },
++        {
++          "slot": 3,
++          "metres": 55.698,
++          "seconds": 10.711
++        },
++        {
++          "slot": 6,
++          "metres": 54.456,
++          "seconds": 10.472
++        }
++      ],
++      "minimumCTLead": 3.508
++    },
++    {
++      "map": "dockyard",
++      "site": "A",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 28.142,
++          "seconds": 5.412
++        },
++        {
++          "slot": -3,
++          "metres": 31.142,
++          "seconds": 5.989
++        },
++        {
++          "slot": 0,
++          "metres": 34.142,
++          "seconds": 6.566
++        },
++        {
++          "slot": 3,
++          "metres": 37.142,
++          "seconds": 7.143
++        },
++        {
++          "slot": 6,
++          "metres": 40.142,
++          "seconds": 7.72
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 56.527,
++          "seconds": 10.871
++        },
++        {
++          "slot": -3,
++          "metres": 57.77,
++          "seconds": 11.11
++        },
++        {
++          "slot": 0,
++          "metres": 59.012,
++          "seconds": 11.348
++        },
++        {
++          "slot": 3,
++          "metres": 60.255,
++          "seconds": 11.587
++        },
++        {
++          "slot": 6,
++          "metres": 61.497,
++          "seconds": 11.826
++        }
++      ],
++      "minimumCTLead": 3.151
++    },
++    {
++      "map": "dockyard",
++      "site": "B",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 40.385,
++          "seconds": 7.766
++        },
++        {
++          "slot": -3,
++          "metres": 37.385,
++          "seconds": 7.189
++        },
++        {
++          "slot": 0,
++          "metres": 34.385,
++          "seconds": 6.612
++        },
++        {
++          "slot": 3,
++          "metres": 31.385,
++          "seconds": 6.036
++        },
++        {
++          "slot": 6,
++          "metres": 28.385,
++          "seconds": 5.459
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 62.426,
++          "seconds": 12.005
++        },
++        {
++          "slot": -3,
++          "metres": 59.426,
++          "seconds": 11.428
++        },
++        {
++          "slot": 0,
++          "metres": 57.598,
++          "seconds": 11.077
++        },
++        {
++          "slot": 3,
++          "metres": 56.355,
++          "seconds": 10.838
++        },
++        {
++          "slot": 6,
++          "metres": 55.113,
++          "seconds": 10.599
++        }
++      ],
++      "minimumCTLead": 2.833
++    },
++    {
++      "map": "foundry",
++      "site": "A",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 24.042,
++          "seconds": 4.623
++        },
++        {
++          "slot": -3,
++          "metres": 26.456,
++          "seconds": 5.088
++        },
++        {
++          "slot": 0,
++          "metres": 29.456,
++          "seconds": 5.665
++        },
++        {
++          "slot": 3,
++          "metres": 32.456,
++          "seconds": 6.242
++        },
++        {
++          "slot": 6,
++          "metres": 35.456,
++          "seconds": 6.818
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 58.213,
++          "seconds": 11.195
++        },
++        {
++          "slot": -3,
++          "metres": 59.456,
++          "seconds": 11.434
++        },
++        {
++          "slot": 0,
++          "metres": 60.698,
++          "seconds": 11.673
++        },
++        {
++          "slot": 3,
++          "metres": 61.941,
++          "seconds": 11.912
++        },
++        {
++          "slot": 6,
++          "metres": 63.77,
++          "seconds": 12.263
++        }
++      ],
++      "minimumCTLead": 4.377
++    },
++    {
++      "map": "foundry",
++      "site": "B",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 36.698,
++          "seconds": 7.057
++        },
++        {
++          "slot": -3,
++          "metres": 33.698,
++          "seconds": 6.48
++        },
++        {
++          "slot": 0,
++          "metres": 30.698,
++          "seconds": 5.904
++        },
++        {
++          "slot": 3,
++          "metres": 28.284,
++          "seconds": 5.439
++        },
++        {
++          "slot": 6,
++          "metres": 27.042,
++          "seconds": 5.2
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 61.355,
++          "seconds": 11.799
++        },
++        {
++          "slot": -3,
++          "metres": 58.355,
++          "seconds": 11.222
++        },
++        {
++          "slot": 0,
++          "metres": 57.113,
++          "seconds": 10.983
++        },
++        {
++          "slot": 3,
++          "metres": 55.87,
++          "seconds": 10.744
++        },
++        {
++          "slot": 6,
++          "metres": 54.627,
++          "seconds": 10.505
++        }
++      ],
++      "minimumCTLead": 3.448
++    },
++    {
++      "map": "oasis",
++      "site": "A",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 28.799,
++          "seconds": 5.538
++        },
++        {
++          "slot": -3,
++          "metres": 31.799,
++          "seconds": 6.115
++        },
++        {
++          "slot": 0,
++          "metres": 34.799,
++          "seconds": 6.692
++        },
++        {
++          "slot": 3,
++          "metres": 37.799,
++          "seconds": 7.269
++        },
++        {
++          "slot": 6,
++          "metres": 40.799,
++          "seconds": 7.846
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 63.527,
++          "seconds": 12.217
++        },
++        {
++          "slot": -3,
++          "metres": 64.77,
++          "seconds": 12.456
++        },
++        {
++          "slot": 0,
++          "metres": 66.012,
++          "seconds": 12.695
++        },
++        {
++          "slot": 3,
++          "metres": 67.255,
++          "seconds": 12.934
++        },
++        {
++          "slot": 6,
++          "metres": 68.497,
++          "seconds": 13.173
++        }
++      ],
++      "minimumCTLead": 4.371
++    },
++    {
++      "map": "oasis",
++      "site": "B",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 42.042,
++          "seconds": 8.085
++        },
++        {
++          "slot": -3,
++          "metres": 39.042,
++          "seconds": 7.508
++        },
++        {
++          "slot": 0,
++          "metres": 36.042,
++          "seconds": 6.931
++        },
++        {
++          "slot": 3,
++          "metres": 33.042,
++          "seconds": 6.354
++        },
++        {
++          "slot": 6,
++          "metres": 30.042,
++          "seconds": 5.777
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 65.497,
++          "seconds": 12.596
++        },
++        {
++          "slot": -3,
++          "metres": 64.255,
++          "seconds": 12.357
++        },
++        {
++          "slot": 0,
++          "metres": 63.012,
++          "seconds": 12.118
++        },
++        {
++          "slot": 3,
++          "metres": 61.77,
++          "seconds": 11.879
++        },
++        {
++          "slot": 6,
++          "metres": 60.527,
++          "seconds": 11.64
++        }
++      ],
++      "minimumCTLead": 3.555
++    },
++    {
++      "map": "depot",
++      "site": "A",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 28.385,
++          "seconds": 5.459
++        },
++        {
++          "slot": -3,
++          "metres": 29.627,
++          "seconds": 5.698
++        },
++        {
++          "slot": 0,
++          "metres": 30.87,
++          "seconds": 5.937
++        },
++        {
++          "slot": 3,
++          "metres": 32.113,
++          "seconds": 6.176
++        },
++        {
++          "slot": 6,
++          "metres": 33.941,
++          "seconds": 6.527
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 60.971,
++          "seconds": 11.725
++        },
++        {
++          "slot": -3,
++          "metres": 62.213,
++          "seconds": 11.964
++        },
++        {
++          "slot": 0,
++          "metres": 63.456,
++          "seconds": 12.203
++        },
++        {
++          "slot": 3,
++          "metres": 64.698,
++          "seconds": 12.442
++        },
++        {
++          "slot": 6,
++          "metres": 65.941,
++          "seconds": 12.681
++        }
++      ],
++      "minimumCTLead": 5.198
++    },
++    {
++      "map": "depot",
++      "site": "B",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 37.355,
++          "seconds": 7.184
++        },
++        {
++          "slot": -3,
++          "metres": 36.113,
++          "seconds": 6.945
++        },
++        {
++          "slot": 0,
++          "metres": 34.87,
++          "seconds": 6.706
++        },
++        {
++          "slot": 3,
++          "metres": 33.627,
++          "seconds": 6.467
++        },
++        {
++          "slot": 6,
++          "metres": 32.385,
++          "seconds": 6.228
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 61.941,
++          "seconds": 11.912
++        },
++        {
++          "slot": -3,
++          "metres": 60.698,
++          "seconds": 11.673
++        },
++        {
++          "slot": 0,
++          "metres": 59.456,
++          "seconds": 11.434
++        },
++        {
++          "slot": 3,
++          "metres": 58.213,
++          "seconds": 11.195
++        },
++        {
++          "slot": 6,
++          "metres": 56.971,
++          "seconds": 10.956
++        }
++      ],
++      "minimumCTLead": 3.772
++    },
++    {
++      "map": "frost",
++      "site": "A",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 27.627,
++          "seconds": 5.313
++        },
++        {
++          "slot": -3,
++          "metres": 30.627,
++          "seconds": 5.89
++        },
++        {
++          "slot": 0,
++          "metres": 33.627,
++          "seconds": 6.467
++        },
++        {
++          "slot": 3,
++          "metres": 36.627,
++          "seconds": 7.044
++        },
++        {
++          "slot": 6,
++          "metres": 39.627,
++          "seconds": 7.621
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 60.284,
++          "seconds": 11.593
++        },
++        {
++          "slot": -3,
++          "metres": 61.527,
++          "seconds": 11.832
++        },
++        {
++          "slot": 0,
++          "metres": 62.77,
++          "seconds": 12.071
++        },
++        {
++          "slot": 3,
++          "metres": 64.012,
++          "seconds": 12.31
++        },
++        {
++          "slot": 6,
++          "metres": 65.255,
++          "seconds": 12.549
++        }
++      ],
++      "minimumCTLead": 3.972
++    },
++    {
++      "map": "frost",
++      "site": "B",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 40.87,
++          "seconds": 7.86
++        },
++        {
++          "slot": -3,
++          "metres": 37.87,
++          "seconds": 7.283
++        },
++        {
++          "slot": 0,
++          "metres": 34.87,
++          "seconds": 6.706
++        },
++        {
++          "slot": 3,
++          "metres": 31.87,
++          "seconds": 6.129
++        },
++        {
++          "slot": 6,
++          "metres": 28.87,
++          "seconds": 5.552
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 62.255,
++          "seconds": 11.972
++        },
++        {
++          "slot": -3,
++          "metres": 61.012,
++          "seconds": 11.733
++        },
++        {
++          "slot": 0,
++          "metres": 59.77,
++          "seconds": 11.494
++        },
++        {
++          "slot": 3,
++          "metres": 58.527,
++          "seconds": 11.255
++        },
++        {
++          "slot": 6,
++          "metres": 57.284,
++          "seconds": 11.016
++        }
++      ],
++      "minimumCTLead": 3.156
++    },
++    {
++      "map": "bastion",
++      "site": "A",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 27.87,
++          "seconds": 5.36
++        },
++        {
++          "slot": -3,
++          "metres": 30.284,
++          "seconds": 5.824
++        },
++        {
++          "slot": 0,
++          "metres": 33.284,
++          "seconds": 6.401
++        },
++        {
++          "slot": 3,
++          "metres": 36.284,
++          "seconds": 6.978
++        },
++        {
++          "slot": 6,
++          "metres": 39.284,
++          "seconds": 7.555
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 63.284,
++          "seconds": 12.17
++        },
++        {
++          "slot": -3,
++          "metres": 64.527,
++          "seconds": 12.409
++        },
++        {
++          "slot": 0,
++          "metres": 65.77,
++          "seconds": 12.648
++        },
++        {
++          "slot": 3,
++          "metres": 67.012,
++          "seconds": 12.887
++        },
++        {
++          "slot": 6,
++          "metres": 68.255,
++          "seconds": 13.126
++        }
++      ],
++      "minimumCTLead": 4.615
++    },
++    {
++      "map": "bastion",
++      "site": "B",
++      "speed": 5.2,
++      "CT": [
++        {
++          "slot": -6,
++          "metres": 40.527,
++          "seconds": 7.794
++        },
++        {
++          "slot": -3,
++          "metres": 37.527,
++          "seconds": 7.217
++        },
++        {
++          "slot": 0,
++          "metres": 34.527,
++          "seconds": 6.64
++        },
++        {
++          "slot": 3,
++          "metres": 32.113,
++          "seconds": 6.176
++        },
++        {
++          "slot": 6,
++          "metres": 30.698,
++          "seconds": 5.904
++        }
++      ],
++      "T": [
++        {
++          "slot": -6,
++          "metres": 65.426,
++          "seconds": 12.582
++        },
++        {
++          "slot": -3,
++          "metres": 63.598,
++          "seconds": 12.23
++        },
++        {
++          "slot": 0,
++          "metres": 62.355,
++          "seconds": 11.991
++        },
++        {
++          "slot": 3,
++          "metres": 61.113,
++          "seconds": 11.752
++        },
++        {
++          "slot": 6,
++          "metres": 59.87,
++          "seconds": 11.513
++        }
++      ],
++      "minimumCTLead": 3.719
++    }
++  ]
++}
+--- 1.0.1/tests/maps-audio-1.0.2.test.mjs
++++ 1.0.2/tests/maps-audio-1.0.2.test.mjs
+@@ -0,0 +1,65 @@
++import {test} from 'node:test';
++import assert from 'node:assert/strict';
++import {readFileSync,existsSync} from 'node:fs';
++import {MAPS} from '../public/maps.mjs';
++import {route} from '../public/navigation.mjs';
++import {move,verticalStep,feetY,eyeHeight,isGrounded,blocked,wallDistance,boxTop} from '../public/shared.mjs';
++import {advanceGrenade,lineVisible} from '../public/utilities.mjs';
++import {SOUND_IDS,spatialMix,soundName,createStepTracker} from '../public/audio.mjs';
++import {TacticalMatch} from '../match.mjs';
++const walk=(p,path,map,limit=6000)=>{let i=0;while(path.length&&i++<limit){const [x,z]=path[0],dx=x-p.x,dz=z-p.z,d=Math.hypot(dx,dz);if(d<.09){path.shift();continue;}move(p,dx/d*.04,dz/d*.04,map.boxes);verticalStep(p,1/90,map.boxes);}return path.length===0;};
++test('all 16 upper rooms and balconies have two independently walkable ascents and descents',()=>{
++ for(const map of Object.values(MAPS))for(const g of map.structures)for(const st of g.stairs){
++  const p={x:g.x,z:st.z+st.side,y:1.65,vy:0};
++  assert.ok(walk(p,[[g.x,g.z]],map),map.id+' ascent');assert.ok(Math.abs(feetY(p)-g.height)<.03);assert.ok(isGrounded(p,map.boxes));
++  assert.ok(walk(p,[[g.x,st.z+st.side]],map),map.id+' descent');for(let i=0;i<45;i++)verticalStep(p,1/90,map.boxes);assert.ok(Math.abs(feetY(p))<.03);
++ }
++});
++test('navigation reaches every second storey and returns to both ground sites with server movement',()=>{
++ for(const map of Object.values(MAPS))for(const g of map.structures){
++  const [x,z]=map.spawns.T,p={x,z,y:1.65,vy:0};const t={x:g.x,z:g.z,y:g.height+1.65};
++  assert.ok(walk(p,route(map,p,t),map),map.id+' upper path');assert.ok(Math.abs(feetY(p)-g.height)<.03);
++  assert.ok(walk(p,route(map,p,map.sites[0]),map),map.id+' return path');assert.ok(Math.abs(feetY(p))<.03);
++ }
++});
++test('ground floor, upper slab, roof and balcony are physical for players, bullets and grenades',()=>{
++ const map=MAPS.terminal,g=map.structures[0];
++ assert.equal(blocked(g.x,g.z,.36,map.boxes,0,1.87),false);
++ assert.equal(blocked(g.x,g.z,.36,map.boxes,g.height,1.87),false);
++ assert.equal(blocked(g.x,g.z,.36,map.boxes,g.height-.5,1.87),true);
++ assert.ok(Math.abs(wallDistance([g.x,1.65,g.z],[0,1,0],map.boxes)-(g.height-.22-1.65))<1e-6);
++ const p={x:g.x,y:g.height+1.65,z:g.z,vy:5.2};let max=feetY(p);for(let i=0;i<150;i++){verticalStep(p,1/90,map.boxes);max=Math.max(max,feetY(p));}assert.ok(max>g.height+.5);assert.ok(Math.abs(feetY(p)-g.height)<.03);
++ const under={x:g.x,y:1.65,z:g.z,vy:8};for(let i=0;i<10;i++)verticalStep(under,1/90,map.boxes);assert.ok(under.y+.22<=g.height-.22+.001);
++ const grenade={x:g.x,z:g.z,y:g.height+1,vy:0,vx:0,vz:0};for(let i=0;i<240;i++)advanceGrenade(grenade,1/120,map.boxes);assert.ok(grenade.y>=g.height+.09&&grenade.y<g.height+.13);
++ assert.equal(lineVisible([g.x,1,g.z],[g.x,g.height+1,g.z],map.boxes),false);
++});
++test('fast motion cannot tunnel through a thin wall and a balcony edge falls rather than hovering',()=>{
++ const boxes=[[0,0,.2,10,5,0,0]],p={x:-3,z:0,y:1.65,vy:0};move(p,10,0,boxes);assert.ok(p.x<-.45);assert.equal(blocked(p.x,p.z,.36,boxes),false);
++ const map=MAPS.terminal,g=map.structures[0],q={x:g.x,y:g.height+1.65,z:g.balcony.z,vy:0};move(q,0,-5,map.boxes);for(let i=0;i<200;i++)verticalStep(q,1/90,map.boxes);assert.ok(feetY(q)<g.height-.5);
++});
++test('upper-storey weapon and bomb drops stay on the right floor; cannot pick up through ceilings',()=>{
++ const game=new TacticalMatch(new Map()),p=game.make('upper',0),q=game.make('ground',0);game.startRound(1000);game.phase='live';const g=game.map.structures[0];
++ Object.assign(p,{x:g.x,z:g.z,y:g.height+1.65});Object.assign(q,{x:g.x,z:g.z,y:1.65});p.weapon='pistol';game.drop(p);const item=game.drops[0];assert.equal(item.y,g.height);assert.equal(game.reachable(q,item),false);assert.equal(game.reachable(p,item),true);
++ game.bomb={state:'carried',carrier:p.id};game.releaseBomb(p);assert.equal(game.bomb.y,g.height);
++});
++test('CT role keeps the northern spawns after halftime; both site paths reachable for every spawn',()=>{
++ for(const map of Object.values(MAPS))for(const attackTeam of [0,1]){
++  const game=new TacticalMatch(new Map());game.map=map;game.attackTeam=attackTeam;const ct=game.make('CT',1-attackTeam),t=game.make('T',attackTeam);assert.equal(ct.z,map.spawns.CT[1]);assert.equal(t.z,map.spawns.T[1]);
++  for(const site of map.sites)for(const role of ['CT','T'])for(const off of [-6,-3,0,3,6]){const [x,z]=map.spawns[role],path=route(map,{x:x+off,z},site);assert.deepEqual(path.at(-1),[site.x,site.z]);}
++ }
++});
++test('47 local original samples have distinct waveforms, valid PCM headers, no clipping or missing IDs',()=>{
++ const manifest=JSON.parse(readFileSync(new URL('../public/assets/audio/manifest.json',import.meta.url)));assert.equal(SOUND_IDS.length,47);assert.deepEqual(new Set(SOUND_IDS),new Set(Object.keys(manifest.sounds)));
++ const shots=[];for(const id of SOUND_IDS){const b=readFileSync(new URL('../public/assets/audio/'+id+'.wav',import.meta.url));assert.equal(b.toString('ascii',0,4),'RIFF');assert.equal(b.toString('ascii',8,12),'WAVE');assert.equal(b.readUInt32LE(24),44100);assert.equal(b.readUInt16LE(34),16);let peak=0;for(let i=44;i<b.length;i+=2)peak=Math.max(peak,Math.abs(b.readInt16LE(i)));assert.ok(peak>1000&&peak<30000,id);if(id.startsWith('shot-'))shots.push(b.toString('base64'));}assert.equal(new Set(shots).size,10);
++ assert.equal(soundName('shot','awp'),'shot-awp');assert.equal(soundName('reload','awp'),'reload-sniper');assert.equal(soundName('reload','glock'),'reload-pistol');assert.equal(soundName('bogus'),null);
++});
++test('spatial audio pans with facing, decays with distance and is muffled by cover',()=>{
++ const eye={x:0,y:1,z:0,yaw:0};assert.ok(spatialMix({x:5,z:0},eye).pan>.9);assert.ok(spatialMix({x:-5,z:0},eye).pan<-.9);assert.ok(spatialMix({x:5,z:0},{...eye,yaw:Math.PI}).pan<-.9);assert.equal(spatialMix({x:60,z:0},eye).gain,0);
++ const a=spatialMix({x:5,z:0},eye),b=spatialMix({x:5,z:0},eye,{occluded:true});assert.ok(b.gain<a.gain);assert.ok(b.lowpass<a.lowpass);
++});
++test('footsteps require grounded running distance; crouch, walking, death and reconnect history stay silent',()=>{
++ const tracker=createStepTracker(),p={id:'p',x:0,z:0,y:1.65,alive:true,grounded:true,vx:5,vz:0},state={round:1,phase:'live',players:[p]};assert.deepEqual(tracker.update(state),[]);
++ p.x=1;tracker.update(state);p.x=2;assert.match(tracker.update(state)[0].kind,/step-stone-/);
++ p.crouch=true;p.x=3;assert.deepEqual(tracker.update(state),[]);p.crouch=false;p.grounded=false;p.x=4;assert.deepEqual(tracker.update(state),[]);p.grounded=true;p.x=4.1;assert.equal(tracker.update(state)[0].kind,'land');p.vx=2;p.x=5;assert.deepEqual(tracker.update(state),[]);
++ p.reload=1000;assert.equal(tracker.update(state)[0].kind,'reload');assert.deepEqual(tracker.update(state),[]);state.round++;assert.deepEqual(tracker.update(state),[]);p.alive=false;p.x+=2;assert.deepEqual(tracker.update(state),[]);
++});
+--- 1.0.1/tests/maps-loadouts.test.mjs
++++ 1.0.2/tests/maps-loadouts.test.mjs
+@@ -25,7 +25,7 @@
+  const a=new TacticalMatch(new Map()),b=new TacticalMatch(new Map());a.map=MAPS.oasis;b.map=MAPS.dockyard;
+  assert.notDeepEqual(a.map.boxes,b.map.boxes);const p={x:0,z:39,yaw:0};accelerate(p,{forward:1},.3,a.map.boxes);assert.ok(p.z<39);
+  const site=a.map.sites[0];assert.equal(atSite(site,a.map.sites).id,'A');assert.equal(floorAt(-3,0,a.map.boxes),1.1);assert.equal(floorAt(-3,0,b.map.boxes),0);
+- assert.equal(lineVisible([-45,1,-24],[-25,1,-24],a.map.boxes),false);assert.equal(b.map.id,'dockyard');
++ assert.equal(lineVisible([-45,1,-31],[-37,1,-31],a.map.boxes),false);assert.equal(b.map.id,'dockyard');
+ });
+ test('v1 profiles migrate to ten weapon IDs; individual skins persist and malformed partials are rejected',()=>{
+  const p=normalizeProfile({version:1,loadout:{rifle:'cobalt',pistol:'ember'}});assert.equal(p.version,2);assert.equal(Object.keys(p.loadout).length,13);assert.equal(p.loadout.ak47,'cobalt');assert.equal(p.loadout.glock,'ember');
+--- 1.0.1/tests/mouse-readings-1.0.2.json
++++ 1.0.2/tests/mouse-readings-1.0.2.json
+@@ -0,0 +1 @@
++[4.883185307179586,3.4831853071795855,2.083185307179585,0.6831853071795848,5.566370614359171,4.16637061435917,2.76637061435917,1.3663706143591696,6.2495559215387555,4.849555921538755,3.449555921538755,2.0495559215387544]--- 1.0.1/tools/check-map-balance.mjs
++++ 1.0.2/tools/check-map-balance.mjs
+@@ -0,0 +1,47 @@
++// Engineering check, not a win-rate claim. Uniform speed, no combat, same player
++// radius, both site disks, all five slots; 8-direction Dijkstra with swept edges.
++import {MAPS}from'../public/maps.mjs';
++import {blocked}from'../public/shared.mjs';
++import {writeFileSync}from'node:fs';
++class Heap{a=[];push(v){let a=this.a,i=a.length;a.push(v);while(i){let j=(i-1)>>1;if(a[j][0]<=v[0])break;a[i]=a[j];i=j;}a[i]=v;}pop(){const a=this.a,o=a[0],v=a.pop();if(a.length){let i=0;while(i*2+1<a.length){let j=i*2+1;if(j+1<a.length&&a[j+1][0]<a[j][0])j++;if(a[j][0]>=v[0])break;a[i]=a[j];i=j;}a[i]=v;}return o;}}
++const report=[];
++for(const map of Object.values(MAPS)){
++ const W=map.w-1,D=map.d-1,ox=-map.w/2+1,oz=-map.d/2+1,groundN=W*D,portals=[],extra=new Map();
++ const addEdge=(a,b,c)=>{if(!extra.has(a))extra.set(a,[]);extra.get(a).push([b,c]);if(!extra.has(b))extra.set(b,[]);extra.get(b).push([a,c]);};
++ const clear=new Uint8Array(groundN),edges=new Map();
++ for(let iz=0;iz<D;iz++)for(let ix=0;ix<W;ix++)clear[iz*W+ix]=!blocked(ox+ix,oz+iz,.36,map.boxes);
++ // Optional upper-storey shortcuts are included, not just the 2D ground grid.
++ for(const g of map.structures){
++  const ids=[];
++  for(const st of g.stairs){
++   const pos={x:g.x,z:st.z+st.side*.8},id=groundN+portals.length;portals.push(pos);ids.push(id);
++   for(let ix=Math.max(0,Math.floor(pos.x-ox)-2);ix<=Math.min(W-1,Math.ceil(pos.x-ox)+2);ix++)for(let iz=Math.max(0,Math.floor(pos.z-oz)-2);iz<=Math.min(D-1,Math.ceil(pos.z-oz)+2);iz++){
++    const k=iz*W+ix;if(!clear[k])continue;const dx=ox+ix-pos.x,dz=oz+iz-pos.z,d=Math.hypot(dx,dz),n=Math.max(1,Math.ceil(d/.2));let pass=true;
++    for(let i=0;i<=n;i++)if(blocked(pos.x+dx*i/n,pos.z+dz*i/n,.36,map.boxes)){pass=false;break;}
++    if(pass)addEdge(id,k,d);
++   }
++  }
++  addEdge(ids[0],ids[1],g.stairs.reduce((a,st)=>a+st.n*st.run+.8,0)+g.d+3);
++ }
++ const N=groundN+portals.length;
++ for(const site of map.sites){
++  const dist=new Float64Array(N);dist.fill(Infinity);const q=new Heap();
++  for(let iz=0;iz<D;iz++)for(let ix=0;ix<W;ix++){const k=iz*W+ix;if(clear[k]&&Math.hypot(ox+ix-site.x,oz+iz-site.z)<=site.radius){dist[k]=0;q.push([0,k]);}}
++  while(q.a.length){const[d,k]=q.pop();if(d!==dist[k])continue;for(const[v,c]of extra.get(k)||[]){const nd=d+c;if(nd<dist[v]){dist[v]=nd;q.push([nd,v]);}}if(k>=groundN)continue;const ix=k%W,iz=(k/W)|0;
++   for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++){
++    if((!dx&&!dz)||ix+dx<0||ix+dx>=W||iz+dz<0||iz+dz>=D)continue;
++    const v=(iz+dz)*W+ix+dx;if(!clear[v])continue;
++    if(dx&&dz&&(!clear[iz*W+ix+dx]||!clear[(iz+dz)*W+ix]))continue;
++    const ek=Math.min(k,v)*N+Math.max(k,v);let pass=edges.get(ek);
++    if(pass===undefined){pass=true;for(const a of [.25,.5,.75])if(blocked(ox+ix+dx*a,oz+iz+dz*a,.36,map.boxes)){pass=false;break;}edges.set(ek,pass);}
++    if(!pass)continue;const nd=d+Math.hypot(dx,dz);if(nd<dist[v]){dist[v]=nd;q.push([nd,v]);}
++   }
++  }
++  const times={};for(const role of['CT','T']){const [sx,sz]=map.spawns[role];times[role]=[-6,-3,0,3,6].map(off=>{const ix=Math.round(sx+off-ox),iz=Math.round(sz-oz),distance=dist[iz*W+ix];if(!Number.isFinite(distance))throw Error(map.id+' no path '+role);return {slot:off,metres:+distance.toFixed(3),seconds:+(distance/5.2).toFixed(3)};});}
++  const ctSlow=Math.max(...times.CT.map(t=>t.seconds)),tFast=Math.min(...times.T.map(t=>t.seconds)),lead=+(tFast-ctSlow).toFixed(3);
++  if(lead<.8)throw Error(`${map.id} ${site.id}: CT lead too small ${lead}`);
++  report.push({map:map.id,site:site.id,speed:5.2,CT:times.CT,T:times.T,minimumCTLead:lead});
++  console.log(`${map.name} ${site.id}: CT ${Math.min(...times.CT.map(t=>t.seconds)).toFixed(2)}–${ctSlow.toFixed(2)}s; T ${tFast.toFixed(2)}–${Math.max(...times.T.map(t=>t.seconds)).toFixed(2)}s; worst-slot CT lead ${lead.toFixed(2)}s`);
++ }
++}
++writeFileSync(new URL('../tests/map-balance-1.0.2.json',import.meta.url),JSON.stringify({method:'8-neighbour 1m Dijkstra plus physical stair/upper-storey portal shortcuts, swept ground collision radius .36m, arrival at site disk, uniform 5.2m/s, no combat or special-event jumps, rounded milliseconds',results:report},null,2)+'\n');
+--- 1.0.1/tools/check-package-1.0.2.cjs
++++ 1.0.2/tools/check-package-1.0.2.cjs
+@@ -0,0 +1,17 @@
++const fs=require('fs'),assert=require('assert/strict'),path=require('path');
++(async()=>{const asar=await import('@electron/asar'),results=[];
++for(const target of ['linux-unpacked','win-unpacked']){
++ const file='dist/'+target+'/resources/app.asar';assert.ok(fs.existsSync(file));
++ const files=['public/maps.mjs','public/map-world.mjs','public/shared.mjs','public/utilities.mjs','public/navigation.mjs','public/audio.mjs','public/game.mjs','public/utility-fx.mjs','match.mjs','server.mjs','linux-input.mjs','electron.cjs','preload.cjs','public/assets/audio/manifest.json','RELEASE-1.0.2-RU.md'];
++ const ids=JSON.parse(fs.readFileSync('public/assets/audio/manifest.json')).sounds;for(const id of Object.keys(ids))files.push('public/assets/audio/'+id+'.wav');
++ for(const f of files)assert.ok(fs.readFileSync(f).equals(asar.extractFile(file,f)),target+': '+f);
++ assert.equal(JSON.parse(asar.extractFile(file,'package.json')).version,'1.0.2');
++ const listed=asar.listPackage(file);assert.ok(!listed.some(f=>f.includes('/tools/qa-')));assert.ok(!asar.extractFile(file,'public/game.mjs').toString().includes('window.qa102'));
++ results.push(`${target}: 62 updated files including all 47 samples match source; version 1.0.2; no QA hooks included`);
++}
++const unpacked='dist/linux-unpacked/resources/app.asar.unpacked/build/native/';
++for(const f of ['linux-raw-input','linux-launcher.sh'])assert.ok(fs.readFileSync(unpacked+f).equals(fs.readFileSync('build/native/'+f)));
++assert.ok(fs.readFileSync('dist/linux-unpacked/voidline-arena').equals(fs.readFileSync('build/native/linux-launcher.sh')));
++results.push('Linux entry-point wrapper and unpacked XInput2 helper match source');
++fs.writeFileSync('tests/package-integrity-1.0.2.txt',results.join('\n')+'\n');console.log(results.join('\n'));
++})().catch(e=>{console.error(e);process.exit(1)});
+--- 1.0.1/tools/generate-audio.py
++++ 1.0.2/tools/generate-audio.py
+@@ -0,0 +1,46 @@
++#!/usr/bin/env python3
++"""Original deterministic VOIDLINE sound effects. No third-party recordings.
++Rebuild: python3 tools/generate-audio.py. 44.1kHz, mono, 16-bit PCM.
++"""
++from pathlib import Path
++import math, random, wave, struct, json
++SR=44100
++OUT=Path(__file__).resolve().parents[1]/'public/assets/audio'
++OUT.mkdir(parents=True,exist_ok=True)
++manifest={}
++def save(name,seconds,fn):
++ rng=random.Random('VOIDLINE-1.1-'+name); data=[fn(i/SR,rng) for i in range(round(seconds*SR))]
++ peak=max(abs(v) for v in data) or 1;scale=.82/peak
++ pcm=struct.pack('<'+'h'*len(data),*(round(max(-1,min(1,v*scale))*32767) for v in data))
++ with wave.open(str(OUT/(name+'.wav')),'wb') as w:w.setnchannels(1);w.setsampwidth(2);w.setframerate(SR);w.writeframes(pcm)
++ manifest[name]={'file':name+'.wav','seconds':len(data)/SR,'bytes':len(pcm)+44}
++def pulse(t,start,freq,duration,noise,rng):
++ u=t-start
++ if u<0 or u>duration:return 0
++ e=min(1,u/.002)*math.exp(-u/(duration/5))
++ return e*((1-noise)*math.sin(2*math.pi*freq*u)+noise*rng.uniform(-1,1))
++guns={'rifle':(115,.24,.62),'ak47':(82,.34,.72),'m4a1s':(175,.19,.26),'awp':(54,.65,.8),'ssg08':(92,.43,.61),'mp9':(205,.16,.65),'p90':(245,.17,.7),'pistol':(240,.16,.22),'glock':(185,.2,.65),'deagle':(73,.42,.72)}
++for name,(freq,decay,noise) in guns.items():
++ def shot(t,r,f=freq,d=decay,n=noise):
++  return pulse(t,0,f,d,n,r)+.55*pulse(t,.001,f*.64,d,.12,r)+.24*pulse(t,.048,f*1.8,d*.65,.8,r)+.09*pulse(t,.105,f,d*.7,.8,r)
++ save('shot-'+name,decay+.16,shot)
++for surf,f,n in [('stone',140,.8),('metal',420,.4),('sand',95,.95),('snow',270,.93)]:
++ for v in range(3):
++  def step(t,r,f=f,n=n,v=v):
++   return pulse(t,0,f*(1+v*.08),.13,n,r)+.5*pulse(t,.035,65,.17,.2,r)+(.2*pulse(t,.075,f*2.7,.12,.35,r) if surf=='metal' else 0)
++  save('step-'+surf+'-'+str(v),.23,step)
++for group,f in [('rifle',390),('pistol',630),('sniper',240)]:
++ def reload(t,r,f=f):
++  return sum(pulse(t,a,f*k,d,n,r)*amp for a,k,d,n,amp in [(0,1,.1,.5,.5),(.19,.6,.18,.7,.6),(.62,1.4,.12,.6,1),(.83,.8,.15,.45,.7)])
++ save('reload-'+group,1.05,reload)
++for name,notes in {
++ 'round':[(0,330),(.13,440),(.26,660)],'live':[(0,550),(.12,825)],'win':[(0,440),(.18,554),(.36,659),(.54,880)],
++ 'loss':[(0,330),(.22,294),(.44,220)],'plant':[(0,740),(.13,930),(.26,740)],'defuse':[(0,880),(.15,660),(.3,990)],
++ 'chat':[(0,790),(.11,1050)],'buy':[(0,660),(.07,990)],'beep':[(0,1500)],'hit':[(0,1150)],'scope':[(0,410)]
++}.items():
++ save(name,max(a for a,f in notes)+.28,lambda t,r,notes=notes:sum(pulse(t,a,f,.23,.015,r) for a,f in notes))
++for name,d,f,n in [('explosion',1.3,45,.85),('flash',.5,1700,.85),('hiss',.9,1400,.99),('throw',.19,260,.85),('bounce',.18,640,.45),('knife',.22,380,.95),('hurt',.22,80,.35),('equip',.27,560,.65),('land',.27,75,.6),('jump',.13,160,.85),('dry',.1,950,.25)]:
++ save(name,d,lambda t,r,d=d,f=f,n=n:pulse(t,0,f,d,n,r)+.2*pulse(t,.035,f*.53,d*.65,.4,r))
++(OUT/'manifest.json').write_text(json.dumps({'license':'CC0-1.0; original synthesis, no third-party recordings','sampleRate':SR,'sounds':manifest},indent=2)+'\n')
++(OUT/'LICENSE.txt').write_text('VOIDLINE original synthesized sound effects\nGenerated with tools/generate-audio.py; no third-party samples.\nDedicated to the public domain under CC0 1.0.\nhttps://creativecommons.org/publicdomain/zero/1.0/\n')
++print('Generated',len(manifest),'original WAV sounds;',sum(v['bytes'] for v in manifest.values()),'bytes')
+--- 1.0.1/tools/qa-v102-input.cjs
++++ 1.0.2/tools/qa-v102-input.cjs
+@@ -0,0 +1,41 @@
++const {_electron:electron}=require('playwright'),fs=require('fs'),path=require('path'),assert=require('assert/strict'),{execFileSync}=require('child_process');
++const ROOT=path.resolve(__dirname,'..'),env={...process.env,DISPLAY:':97',XDG_SESSION_TYPE:'wayland',WAYLAND_DISPLAY:'qa-no-wayland'};
++const wait=ms=>new Promise(r=>setTimeout(r,ms));
++(async()=>{
++ const app=await electron.launch({executablePath:ROOT+'/node_modules/electron/dist/electron',args:[ROOT,'--ozone-platform=x11','--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--user-data-dir=/data/voidline-qa-102-input-'+Date.now()],env,timeout:60000});
++ const results=[],errors=[];let p;
++ const pass=s=>{results.push(s+' PASS');console.log(s,'PASS');};
++ try{
++ p=await app.firstWindow();p.setDefaultTimeout(60000);p.on('pageerror',e=>{errors.push(e.stack);console.error('PAGE ERROR',e.stack);});
++ await p.waitForLoadState('load');await p.waitForFunction(()=>document.getElementById('scanPeers'));await wait(300);
++ await p.waitForSelector('#createOpen');
++ const ozone=await app.evaluate(({app})=>app.commandLine.getSwitchValue('ozone-platform'));assert.equal(ozone,'x11');pass('Native Linux startup uses explicit pre-start X11 flag even with WAYLAND_DISPLAY');
++ await p.route('**/game.mjs',r=>r.fulfill({contentType:'text/javascript',body:fs.readFileSync(ROOT+'/public/game.mjs','utf8')+`\nwindow.qa102input={state:()=>({nativeMouse,locked:capture.locked,actual:document.pointerLockElement===canvas,yaw,pitch,me,phase:state?.phase,attackTeam:state?.attackTeam,backend:mouseBackendLabel.textContent,unread:chatNotices.unread}),shop:()=>{releaseGameControls();document.getElementById('buyMenu').hidden=false;document.getElementById('pause').hidden=true;renderShop();showShopModel('rifle');return shopPreview.side;},shopAs:(team,attackTeam)=>{const oldMe=me.team,oldAttack=state.attackTeam;me.team=team;state.attackTeam=attackTeam;showShopModel('rifle');const side={side:shopPreview.side,label:document.getElementById('shopCanvas').getAttribute('aria-label')};me.team=oldMe;state.attackTeam=oldAttack;return side;}};`}));
++ await p.evaluate(async()=>{await window.voidlineSettings.invoke('save',{frameCap:30,renderScale:.5,renderResolution:'1280x720',shadows:'off',aa:'off'});});await p.reload();await p.waitForFunction(()=>window.qa102input);
++ await p.locator('#createOpen').click();await p.locator('#botsA').selectOption('0');await p.locator('#botsB').selectOption('0');await p.locator('#createPlay').click();await p.locator('[data-team=T]').click();await p.waitForFunction(()=>qa102input.state().me?.alive);
++ assert.equal(await p.evaluate(()=>qa102input.shop()),1);assert.match(await p.locator('#shopCanvas').getAttribute('aria-label'),/Т · Атака/);await p.screenshot({path:ROOT+'/previews/1.0.2-shop-T.png'});pass('Shop renders current T model, not default CT');
++ const ct=await p.evaluate(()=>qa102input.shopAs(0,1));assert.equal(ct.side,0);assert.match(ct.label,/КТ · Защита/);assert.equal((await p.evaluate(()=>qa102input.shopAs(1,1))).side,1);pass('Shop rebuilds same selected item on role change / halftime');
++ await p.locator('#closeBuy').evaluate(b=>b.click());
++ async function resume(){if(!await p.evaluate(()=>qa102input.state().locked)){await wait(1400);await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].focus());await p.locator('#resume').click();}await p.waitForFunction(()=>qa102input.state().locked&&qa102input.state().nativeMouse);}
++ await resume();assert.match(await p.evaluate(()=>qa102input.state().backend),/XInput2/);pass('Real Electron pointer lock starts native XInput2 backend');
++ const readings=[];
++ for(let i=0;i<12;i++){
++  const before=await p.evaluate(()=>qa102input.state().yaw);
++  execFileSync('xdotool',['mousemove_relative','--','700','0'],{env});
++  await p.waitForFunction(before=>qa102input.state().yaw!==before,before,{timeout:5000});
++  readings.push(await p.evaluate(()=>qa102input.state().yaw));
++ }
++ assert.equal(await p.evaluate(()=>qa102input.state().nativeMouse),true);pass('12 repeated +700 relative motions rotate indefinitely without Esc / screen-edge clamp');
++ await p.keyboard.press('Escape');await p.waitForFunction(()=>!qa102input.state().locked&&!qa102input.state().nativeMouse);const paused=await p.evaluate(()=>qa102input.state().yaw);
++ execFileSync('xdotool',['mousemove_relative','--','900','0'],{env});await wait(250);assert.equal(await p.evaluate(()=>qa102input.state().yaw),paused);pass('Esc stops raw capture; out-of-game motion cannot rotate camera');
++ await resume();await p.locator('#chatToggle').evaluate(b=>b.click());await p.waitForFunction(()=>!qa102input.state().nativeMouse);await p.locator('#matchChatText').fill('no global capture');const beforeChat=await p.evaluate(()=>qa102input.state().yaw);execFileSync('xdotool',['mousemove_relative','--','200','0'],{env});await wait(100);assert.equal(await p.evaluate(()=>qa102input.state().yaw),beforeChat);await p.locator('#chatToggle').evaluate(b=>b.click());pass('Opening chat releases native input and preserves editable input');
++ // A real second network client sends a message to the game, not a direct UI hook.
++ await p.evaluate(async()=>{window.peer101=new WebSocket('ws://'+location.host);await new Promise(r=>peer101.addEventListener('open',r,{once:true}));peer101.send(JSON.stringify({type:'join',name:'NOTICE TEST',team:'CT'}));await new Promise(r=>{const fn=e=>{if(JSON.parse(e.data).type==='welcome'){peer101.removeEventListener('message',fn);r();}};peer101.addEventListener('message',fn);});});
++ await p.evaluate(()=>peer101.send(JSON.stringify({type:'chat',text:'Hello <script>window.bad=1</script>'})));
++ await p.waitForFunction(()=>qa102input.state().unread.match===1);assert.equal(await p.locator('.chatNotice').count(),1);assert.ok((await p.locator('.chatNotice').innerText()).includes('<script>'));assert.equal(await p.evaluate(()=>window.bad),undefined);assert.match(await p.locator('#chatToggle').innerText(),/1/);pass('Real received chat message shows toast + unread badge, HTML stays inert');
++ await p.locator('#chatToggle').evaluate(b=>b.click());await p.waitForFunction(()=>qa102input.state().unread.match===0);await p.locator('#matchChatText').fill('Own outgoing message');await p.locator('#matchChatForm').evaluate(f=>f.requestSubmit());await wait(300);assert.equal(await p.evaluate(()=>qa102input.state().unread.match),0);pass('Opening chat clears unread; own message does not notify');
++ await p.locator('#chatToggle').evaluate(b=>b.click());await p.evaluate(()=>window.dispatchEvent(new CustomEvent('voidline-chat-message',{detail:{scope:'p2p',senderId:'test',name:'PEER',text:'P2P notice'}})));await p.waitForFunction(()=>qa102input.state().unread.p2p===1);assert.match(await p.locator('#openSocial').innerText(),/1/);pass('P2P unread notification and menu badge');
++ await p.evaluate(()=>peer101.close());assert.deepEqual(errors,[]);assert.equal(await p.locator('#fatal').isVisible(),false);pass('No JavaScript errors / fatal overlay');
++ fs.writeFileSync(ROOT+'/tests/native-1.0.2.txt',results.join('\n')+'\n');fs.writeFileSync(ROOT+'/tests/mouse-readings-1.0.2.json',JSON.stringify(readings));
++ }catch(e){if(p){fs.writeFileSync('/data/native102input-failure.json',JSON.stringify(await p.evaluate(()=>({state:window.qa102input?.state(),fatal:document.getElementById('fatal')?.textContent})),null,2));await p.screenshot({path:'/data/native102input-failure.png'});}throw e;}finally{await app.close();}process.exit(0);
++})().catch(e=>{console.error(e);process.exit(1)});
+--- 1.0.1/tools/qa-v102-package.cjs
++++ 1.0.2/tools/qa-v102-package.cjs
+@@ -0,0 +1,18 @@
++const {_electron:electron}=require('playwright'),path=require('path'),fs=require('fs'),assert=require('assert/strict'),{execFileSync}=require('child_process');
++const ROOT=path.resolve(__dirname,'..'),env={...process.env,DISPLAY:':97',XDG_SESSION_TYPE:'wayland',WAYLAND_DISPLAY:'qa-no-wayland'};
++(async()=>{const app=await electron.launch({executablePath:ROOT+'/dist/linux-unpacked/voidline-arena',args:['--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--user-data-dir=/data/voidline-packaged-qa-102-'+Date.now()],env,timeout:60000});const results=[],errors=[];let p;
++ try{
++ p=await app.firstWindow();p.setDefaultTimeout(60000);p.on('pageerror',e=>errors.push(e.stack));await p.waitForLoadState('load');await p.waitForFunction(()=>document.getElementById('scanPeers'));
++ const info=await app.evaluate(({app})=>({version:app.getVersion(),packaged:app.isPackaged,ozone:app.commandLine.getSwitchValue('ozone-platform')}));assert.deepEqual(info,{version:'1.0.2',packaged:true,ozone:'x11'});results.push('Packaged Linux launcher selects X11 before startup with both DISPLAY and WAYLAND_DISPLAY');
++ await p.evaluate(async()=>{await window.voidlineSettings.invoke('save',{frameCap:30,renderScale:.4,renderResolution:'1280x720',shadows:'off',aa:'off'});});await p.reload();await p.waitForLoadState('load');await p.waitForFunction(()=>document.getElementById('scanPeers'));
++ await p.evaluate(()=>{const WS=WebSocket;window.WebSocket=class extends WS{constructor(...a){super(...a);this.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.type==='welcome')window.qaId=m.id;if(m.type==='state')window.qaState=m;});}};});
++ await p.locator('#createOpen').click();await p.locator('#botsA').selectOption('0');await p.locator('#botsB').selectOption('0');await p.locator('#createPlay').click();await p.locator('[data-team=T]').click();await p.waitForFunction(()=>window.qaState?.players.some(p=>p.id===window.qaId));
++ if(!await p.evaluate(()=>!!document.pointerLockElement)){await p.waitForTimeout(1400);await p.locator('#resume').click();}
++ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].focus());await p.waitForFunction(()=>document.getElementById('mouseBackend').textContent.includes('XInput2'));await p.waitForTimeout(250);results.push('Packaged ASAR starts its unpacked native XInput2 helper');
++ const readings=[];for(let i=0;i<4;i++){const before=await p.evaluate(()=>qaState.players.find(p=>p.id===qaId).yaw);execFileSync('xdotool',['mousemove_relative','--','900','0'],{env});await p.waitForFunction(before=>qaState.players.find(p=>p.id===qaId).yaw!==before,before,{timeout:12000});readings.push(await p.evaluate(()=>qaState.players.find(p=>p.id===qaId).yaw));}
++ results.push('Packaged native deltas reach the authoritative server across four beyond-screen motions');
++ await p.keyboard.press('Escape');await p.waitForFunction(()=>!document.pointerLockElement);assert.deepEqual(errors,[]);assert.equal(await p.locator('#fatal').isVisible(),false);results.push('Esc releases capture; no page errors in packaged client');
++ const packaged=await p.evaluate(async()=>{const {MAPS}=await import('/maps.mjs');const {SOUND_IDS,createGameAudio}=await import('/audio.mjs');const audio=createGameAudio({getVolume:()=>0});audio.init();await audio.preload();const loaded=audio.stats().loaded;await audio.dispose();return {maps:Object.values(MAPS).map(m=>({id:m.id,structures:m.structures.length})),sounds:SOUND_IDS.length,loaded};});assert.equal(packaged.maps.length,8);assert.ok(packaged.maps.every(m=>m.structures===2));assert.equal(packaged.sounds,47);assert.equal(packaged.loaded,47);results.push('Packaged client serves all eight new multilevel maps and decodes all 47 bundled sound samples');
++ fs.writeFileSync(ROOT+'/tests/packaged-linux-1.0.2.txt',results.map(s=>s+' PASS').join('\n')+'\n');console.log(results.join('\n'));
++ }catch(e){if(p){await p.screenshot({path:'/data/package102-failure.png'});console.error(await p.locator('#mouseBackend').textContent());}throw e;}finally{await app.close();}process.exit(0);
++})().catch(e=>{console.error(e);process.exit(1)});
+--- 1.0.1/tools/qa-v102.cjs
++++ 1.0.2/tools/qa-v102.cjs
+@@ -0,0 +1,31 @@
++const {_electron:electron}=require('playwright'),path=require('path'),fs=require('fs'),assert=require('assert/strict');
++const ROOT=path.resolve(__dirname,'..'),env={...process.env,DISPLAY:':97',XDG_SESSION_TYPE:'x11'};
++(async()=>{
++ const app=await electron.launch({executablePath:ROOT+'/node_modules/electron/dist/electron',args:[ROOT,'--ozone-platform=x11','--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--user-data-dir=/data/voidline-qa-102-'+Date.now()],env,timeout:60000});
++ const errors=[],audioErrors=[],results=[];let p;
++ const pass=s=>{console.log('PASS',s);results.push('PASS '+s);};
++ try{
++ p=await app.firstWindow();p.setDefaultTimeout(60000);p.on('pageerror',e=>errors.push(e.stack));p.on('console',m=>{if(m.type()==='warning'&&m.text().includes('[audio]'))audioErrors.push(m.text());});
++ await p.waitForLoadState('load');await p.waitForFunction(()=>document.getElementById('createOpen'));await p.waitForTimeout(400);
++ await p.addInitScript(()=>{const Native=window.AudioContext;window.AudioContext=class extends Native{constructor(...args){super(...args);window.qaAudioContext=this;}createDynamicsCompressor(){const node=super.createDynamicsCompressor();const analyser=this.createAnalyser();analyser.fftSize=2048;node.connect(analyser);this.qaAnalyser=analyser;return node;}};});
++ const hook=`
++window.qa102={audio:gameAudio,steps:stepTracker,state:()=>({me,phase:state?.phase,nativeMouse,yaw,backend:mouseBackendLabel.textContent}),
++ preview:async(id)=>{releaseGameControls();window.qaPreviewActive=true;const m=getMap(id);let qaScene=new THREE.Scene();qaScene.background=new THREE.Color(m.theme.sky);const world=createMapWorld(m);qaScene.add(world.root);qaScene.add(new THREE.HemisphereLight('#ffffff','#777777',2.2));const light=new THREE.DirectionalLight('#ffffff',2);light.position.set(-20,60,10);qaScene.add(light);const qc=new THREE.PerspectiveCamera(58,960/640,.1,400);qc.position.set(m.w*.65,m.d*.72,m.d*.67);qc.lookAt(0,0,-m.d*.08);const qr=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});qr.setSize(960,640);qr.setPixelRatio(1);qr.outputColorSpace=THREE.SRGBColorSpace;qr.domElement.id='qaMapPreview';qr.domElement.style='position:fixed;inset:0;z-index:999999;width:960px;height:640px';document.body.append(qr.domElement);await new Promise(r=>setTimeout(r,600));qr.render(qaScene,qc);const image=qr.domElement.toDataURL('image/png');window.qaClearPreview=()=>{world.dispose();qr.dispose();qr.forceContextLoss();qr.domElement.remove();window.qaPreviewActive=false;};return {image,id,objects:world.root.children.length,structures:m.structures.length};}
++};`;
++ await p.route('**/game.mjs',r=>r.fulfill({contentType:'text/javascript',body:fs.readFileSync(ROOT+'/public/game.mjs','utf8').replace('  requestAnimationFrame(animate);','  requestAnimationFrame(animate);if(window.qaPreviewActive)return;')+hook}));
++ await p.evaluate(async()=>{await window.voidlineSettings.invoke('save',{frameCap:30,renderScale:.5,renderResolution:'1280x720',shadows:'off',aa:'off',volume:.7});});
++ await p.reload();await p.waitForFunction(()=>window.qa102);
++ for(const id of ['terminal','courtyard','dockyard','foundry','oasis','depot','frost','bastion']){
++  const info=await p.evaluate(id=>qa102.preview(id),id);assert.equal(info.structures,2);assert.ok(info.objects>5);fs.writeFileSync(ROOT+'/previews/1.0.2-'+id+'.png',Buffer.from(info.image.split(',')[1],'base64'));await p.evaluate(()=>qaClearPreview());
++ }pass('All eight multilevel maps render in real Electron; screenshots saved; GPU worlds disposed');
++ await p.locator('#createOpen').click();await p.locator('#botsA').selectOption('0');await p.locator('#botsB').selectOption('0');await p.locator('#createPlay').click();await p.locator('[data-team=T]').click();await p.waitForFunction(()=>qa102.state().me?.alive);
++ await p.waitForFunction(()=>qa102.audio.stats().loaded===47);assert.deepEqual(audioErrors,[]);pass('All 47 local PCM samples decode successfully in actual Web Audio context');
++ await p.waitForFunction(()=>qa102.audio.stats().state==='running');
++ const started=await p.evaluate(()=>qa102.audio.play('shot',{weapon:'awp',cooldown:0}));assert.equal(started,true);await p.waitForTimeout(60);
++ const rms=await p.evaluate(()=>{const a=qaAudioContext.qaAnalyser,x=new Float32Array(a.fftSize);a.getFloatTimeDomainData(x);return Math.sqrt(x.reduce((s,v)=>s+v*v,0)/x.length);});assert.ok(rms>1e-5,'non-silent actual audio graph RMS '+rms);pass('Actual shot playback produces nonzero samples after compressor and gain (RMS '+rms.toFixed(5)+')');
++ await p.evaluate(async()=>{const ids=(await import('/audio.mjs')).SOUND_IDS;for(const id of ids){qa102.audio.play(id,{cooldown:0,key:id});await new Promise(r=>setTimeout(r,35));}});await p.waitForTimeout(1800);assert.equal(await p.evaluate(()=>qa102.audio.stats().voices),0);pass('Every sample plays and every voice disconnects after completion');
++ await p.evaluate(()=>{qa102.audio.play('explosion',{cooldown:0});window.voidlinePrefs.volume=0;qa102.audio.update();});assert.equal(await p.evaluate(()=>qa102.audio.stats().volume),0);await p.waitForTimeout(220);const muted=await p.evaluate(()=>{const a=qaAudioContext.qaAnalyser,x=new Float32Array(a.fftSize);a.getFloatTimeDomainData(x);return Math.sqrt(x.reduce((s,v)=>s+v*v,0)/x.length);});assert.ok(muted<1e-4);await p.evaluate(()=>{window.voidlinePrefs.volume=.7;qa102.audio.update();});pass('Volume zero mutes an already-playing sound, not just future shots');
++ assert.deepEqual(errors,[]);assert.equal(await p.locator('#fatal').isVisible(),false);pass('No JavaScript page errors or fatal overlays in map/audio checks');
++ fs.writeFileSync(ROOT+'/tests/native-audio-maps-1.0.2.txt',results.join('\n')+'\n');
++ }catch(e){if(p)await p.screenshot({path:'/data/qa102-failure.png'});console.error(e);throw e;}finally{await app.close();}process.exit(0);
++})().catch(e=>{console.error(e);process.exit(1)});

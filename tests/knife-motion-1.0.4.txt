@@ -1,0 +1,13 @@
+✔ knife clips have finite smooth monotonic time samples and no excessive spin (4.126904ms)
+✔ butterfly only articulates free parts about Y pin axes, safe handle is held (0.594679ms)
+✔ karambit makes one directional finger-ring orbit, not centre-of-weapon Z propeller (0.339712ms)
+✔ attacks and inspection return the carrying hand to rest (0.409108ms)
+✔ phase easing preserves endpoints with gentle acceleration (0.219401ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 66.344803

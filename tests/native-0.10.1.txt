@@ -1,0 +1,11 @@
+NATIVE large-window resize {"cw":2000,"ch":1125,"w":2000,"h":1125,"buffer":[640,360],"aspect":1.7777777777777777,"lobby":1.7777777777777777}
+NATIVE menu: no default menu; Ctrl+W/reload/zoom cannot close/reload/resize page
+NATIVE text field Ctrl+A preserved
+NATIVE live Ctrl+W = crouch+move; Ctrl+A = left, no select/close
+NATIVE Ctrl+wheel: slot changes without zoom
+NATIVE mouse beyond window coordinates: relative aim remains truly captured
+NATIVE Esc: real unlock, pause, no unlocked aiming
+NATIVE window blur: capture released and held input cleared
+NATIVE match chat: Ctrl+A selects only input; no gameplay while typing
+NATIVE capture refusal: actionable pause, no fatal/unhandled rejection; explicit retry recovers
+NATIVE JS errors none; narrow layout no horizontal overflow

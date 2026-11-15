@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <title>VOIDLINE — Startup Recovery 1.0.9</title>
+    <link rel="icon" type="image/svg+xml" href="assets/voidline.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <canvas id="world" aria-label="Трёхмерная игровая арена"></canvas>
+    <div class="vignette"></div>
+    <main id="menu" class="lobbyMenu">
+      <header class="lobbyTop">
+        <a class="lobbyLogo" href="#" aria-label="VOIDLINE">V/</a
+        ><span class="edition">VOIDLINE<br /><small>FIX / 1.0.9</small></span>
+        <nav aria-label="Разделы игры">
+          <button data-pane="arsenal">АРСЕНАЛ</button
+          ><button data-pane="inventory">ИНВЕНТАРЬ</button
+          ><button data-pane="equipment">СНАРЯЖЕНИЕ</button
+          ><button data-pane="play" class="selected">ИГРАТЬ</button
+          ><button data-pane="settings" aria-label="Настройки">
+            <span data-icon="settings"></span>
+          </button>
+        </nav>
+        <span class="localTag">ORIGINAL BUILD · P2P</span>
+      </header>
+      <section class="playCard menuPane" id="pane-play">
+        <div class="eyebrow">ОПЕРАЦИЯ / 01</div>
+        <h1>TERMINAL</h1>
+        <p class="lobbySubtitle">УСТАНОВКА И РАЗМИНИРОВАНИЕ · ДО 5 × 5</p>
+        <form id="joinForm">
+          <div class="fields">
+            <label
+              >ПОЗЫВНОЙ<input
+                id="name"
+                maxlength="16"
+                value="OPERATOR"
+                autocomplete="off"
+                required /></label
+            ><label
+              >ПОДКЛЮЧЕНИЕ К СЕРВЕРУ<input
+                id="address"
+                placeholder="IP:порт или пусто для тренировки"
+                autocomplete="off"
+                spellcheck="false"
+            /></label>
+          </div>
+          <button id="join" type="submit">
+            <span>ВОЙТИ В ОПЕРАЦИЮ</span><span>↗</span>
+          </button>
+          <p id="status" role="status">
+            Пустой адрес → локальная игра с ботами
+          </p>
+        </form>
+        <button id="createOpen" class="secondary createOpen" type="button">
+          ＋ СОЗДАТЬ СВОЙ МАТЧ
+        </button>
+        <p id="hostHint">Приватный сервер · боты · открытие для LAN</p>
+        <div class="lobbyFacts">
+          <span>08 КАРТ</span><span>10 ПУШЕК + 3 НОЖА</span><span>07 ПОБЕД</span>
+        </div>
+      </section>
+      <section class="playCard menuPane" id="pane-arsenal" hidden>
+        <div class="eyebrow">ОРУЖИЕ / СПРАВОЧНИК</div>
+        <h2>АРСЕНАЛ</h2>
+        <article class="arsenalItem">
+          <b>M4A4</b><span>Автоматическая винтовка</span>
+          <p>30 патронов · паттерн отдачи · контроль короткими очередями</p>
+          <div class="statBar"><i style="width: 85%"></i></div>
+        </article>
+        <article class="arsenalItem">
+          <b>USP-S</b><span>Полуавтоматический пистолет</span>
+          <p>12 патронов · отдельное нажатие на каждый выстрел</p>
+          <div class="statBar"><i style="width: 55%"></i></div>
+        </article>
+        <p class="panelNote">
+          Закупка в матче: B. Смена имеющегося оружия: 1 / 2. При движении и
+          прыжке точность снижается.
+        </p>
+      </section>
+      <section
+        class="playCard menuPane inventoryPane"
+        id="pane-inventory"
+        hidden
+      >
+        <div class="eyebrow">LOADOUT / 10 ПУШЕК + 3 НОЖА · 6 РАСКРАСОК</div>
+        <h2>ТВОЯ РАСКРАСКА.</h2>
+        <label for="skinWeapon">ОРУЖИЕ</label
+        ><select id="skinWeapon">
+          <option value="rifle">M4A4</option>
+          <option value="pistol">USP-S</option>
+        </select>
+        <p id="skinSummary"></p>
+        <button id="skinPreviewToggle" class="secondary">
+          РАССМОТРЕТЬ 3D-МОДЕЛЬ
+        </button>
+        <div id="skinOptions">
+          <div id="skinCards"></div>
+          <p id="skinStatus" role="status"></p>
+          <p class="inventoryHint">
+            Кнопка предпросмотра открывает реальную 3D-модель с выбранным
+            материалом. Раскраска видна другим игрокам и остаётся на выброшенном
+            оружии.
+          </p>
+        </div>
+      </section>
+      <section class="playCard menuPane" id="pane-equipment" hidden>
+        <div class="eyebrow">КТ / FIELD OPERATOR</div>
+        <h2>СНАРЯЖЕНИЕ</h2>
+        <article class="arsenalItem">
+          <b>ОПЕРАТОР «КЕСТРЕЛ»</b>
+          <p>
+            Камуфляжная форма, плитоносец, баллистический шлем, гарнитура,
+            защитные очки и разгрузка.
+          </p>
+        </article>
+        <p class="panelNote">
+          Оригинальная процедурная 3D-модель. Раскраски оружия доступны во
+          вкладке «Инвентарь»; бронежилет и шлем для защиты покупаются в матче
+          на B. Внешний вид модели сам по себе не означает наличие брони.
+        </p>
+      </section>
+      <div class="operatorBadge">
+        <span class="operatorEmblem">V/</span>
+        <div><b>ОПЕРАТОР КТ</b><span>НА ГОТОВЕ · TERMINAL</span></div>
+      </div>
+      <aside class="friendRail">
+        <div class="railHeading">
+          <span>ДРУЗЬЯ</span><b id="friendCount">0</b>
+        </div>
+        <div id="railFriends">
+          <p class="friendsEmpty">
+            Добавь друга по коду и подключись напрямую.
+          </p>
+        </div>
+        <button id="openSocial" class="secondary">ДРУЗЬЯ И ПЕРЕПИСКИ ↗</button>
+        <p class="railFoot">P2P · TLS 1.3<br />Без центрального сервера</p>
+      </aside>
+      <footer class="lobbyFooter">
+        <span>VOIDLINE / 1.0.9</span
+        ><span>Оригинальные модели и окружение · LAN / VPN</span>
+      </footer>
+    </main>
+    <div id="hud" hidden>
+      <div class="matchbar">
+        <div class="team cyan"><span id="sideA">Т</span> <b id="scoreA">0</b></div>
+        <div class="roundbox">
+          <small id="round">РАУНД 01</small><strong id="timer">01:30</strong>
+        </div>
+        <div class="team orange"><b id="scoreB">0</b> <span id="sideB">КТ</span></div>
+      </div>
+      <div class="topLeft">
+        <span class="eyebrow">TERMINAL / СЕВЕРНЫЙ СЕКТОР</span
+        ><canvas
+          id="radar"
+          width="180"
+          height="214"
+          aria-label="Мини-карта команды"
+        ></canvas
+        ><span id="connection">● СЕРВЕР ПОДКЛЮЧЁН</span>
+      </div>
+      <div id="killfeed"></div>
+      <div id="mission">
+        <small id="role"></small>
+        <p id="objectiveText"></p>
+        <div id="eventBanner"></div>
+        <div id="actionProgress" hidden>
+          <span id="actionLabel"></span>
+          <div><i id="actionFill"></i></div>
+        </div>
+      </div>
+      <div id="announcement">
+        <small id="announceSub"></small><strong id="announceTitle"></strong>
+      </div>
+      <div id="crosshair"><i></i><i></i><i></i><i></i><b></b></div><div id="scopeOverlay" hidden></div>
+      <div id="hitmarker">×</div>
+      <div id="damage"></div>
+      <div id="flashBlind"><span id="blindLabel" hidden>ОСЛЕПЛЕНИЕ</span></div>
+      <div class="bottomLeft">
+        <small id="utilityInventory"></small><small id="equipment"></small
+        ><small id="teamName">КТ / ОПЕРАТОР</small>
+        <div class="health">
+          <span>+</span><b id="hp">100</b>
+          <div class="healthTrack"><i id="hpBar"></i></div>
+        </div>
+      </div>
+      <div class="weaponHud">
+        <small id="equippedSkin"></small
+        ><small id="weaponName">M4A4</small>
+        <div><b id="ammo">24</b><span id="reserve">/ 120</span></div>
+        <small id="reloadText">1 ВИНТОВКА &nbsp; 2 ПИСТОЛЕТ</small>
+      </div>
+      <div class="controls">
+        WASD движение &nbsp; · &nbsp; R перезарядка &nbsp; · &nbsp; SHIFT шаг
+        &nbsp; · &nbsp; TAB счёт · 4–7 гранаты · CTRL присесть · E действие · G
+        выбросить · 3 нож · F осмотр · B закупка · ESC пауза
+      </div>
+      <div id="scoreboard" hidden>
+        <h2>ОПЕРАТИВНАЯ СВОДКА</h2>
+        <div id="rows"></div>
+      </div>
+    </div>
+    <div
+      id="buyMenu"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="buyTitle"
+    >
+      <section>
+        <span class="eyebrow">TERMINAL / SUPPLY</span>
+        <h2 id="buyTitle">ЗАКУПКА <b id="buyBalance"></b></h2>
+        <div id="buyTimer"></div><div id="buyLayout"><div id="buyItems"></div><aside id="buyPreview"><canvas id="shopCanvas"></canvas><h3 id="shopName">АРСЕНАЛ</h3><p id="shopStats">Выбери оружие для просмотра</p></aside></div>
+        <p id="buyMessage" role="status"></p>
+        <button id="closeBuy" class="secondary">В БОЙ · B</button>
+      </section>
+    </div>
+    <div id="pause" hidden>
+      <section class="pauseShell">
+        <div class="pauseMain">
+          <span class="eyebrow">VOIDLINE / OPERATION ACTIVE</span>
+          <h2>СОХРАНЯЙ ФОКУС.</h2>
+          <p id="pauseInfo">Матч продолжается, даже когда открыта пауза.</p>
+          <button id="resume">ПРОДОЛЖИТЬ ↗</button
+          ><button id="pauseSocial" class="secondary">ДРУЗЬЯ / ЧАТ</button>
+          <button id="pauseSettings" class="secondary">
+            <span data-icon="settings"></span> НАСТРОЙКИ
+          </button>
+          <button id="leave" class="secondary">ВЫЙТИ В МЕНЮ</button>
+          <small>На сервере нет паузы · Изменения применяются сразу</small>
+        </div>
+        <div id="hostPanel" hidden>
+          <div class="hostHeading">
+            <span class="eyebrow">КОНТРОЛЬ СЕРВЕРА</span
+            ><b id="lanState">ПРИВАТНЫЙ МАТЧ</b>
+          </div>
+          <h3>Открыть для сети</h3>
+          <div class="lanActions">
+            <label
+              >TCP-ПОРТ<input
+                id="lanPort"
+                type="number"
+                min="1024"
+                max="65535"
+                value="3080" /></label
+            ><button id="openLAN">ОТКРЫТЬ ДЛЯ LAN ↗</button
+            ><button id="closeLAN" class="secondary" hidden>
+              ЗАКРЫТЬ ДОСТУП
+            </button>
+          </div>
+          <div id="shareBlock" hidden>
+            <label for="shareAddress">АДРЕС ДЛЯ ДРУГА</label>
+            <div class="shareActions">
+              <select
+                id="shareAddress"
+                aria-label="Адрес сервера в локальной сети"
+              ></select
+              ><button id="copyAddress" class="secondary">КОПИЯ</button>
+            </div>
+          </div>
+          <p class="hostNote">
+            Для одной Wi-Fi / LAN или частной VPN. Это не открытие в интернет.
+            Закрытие доступа отключит сетевых гостей.
+          </p>
+          <div class="botsHeading">
+            <h3>Боты <small id="botLevel">ОБЫЧНЫЕ</small></h3>
+            <span id="rosterSummary"></span>
+          </div>
+          <div class="botActions">
+            <button id="addSpectre" class="secondary">＋ Т</button
+            ><button id="addEmber" class="secondary">＋ КТ</button
+            ><button id="clearBots" class="secondary">УБРАТЬ ВСЕХ</button>
+          </div>
+          <div id="botList"></div>
+          <button id="restartMatch" class="secondary">
+            НАЧАТЬ МАТЧ ЗАНОВО
+          </button>
+          <p id="hostMessage" role="status">
+            Управление доступно только хозяину.
+          </p>
+        </div>
+      </section>
+    </div>
+    <div
+      id="createDialog"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="createTitle"
+    >
+      <section>
+        <span class="eyebrow">NEW OPERATION / СВОЙ СЕРВЕР</span>
+        <h2 id="createTitle">ТВОЙ МАТЧ. ТВОИ ПРАВИЛА.</h2>
+        <p>8 карт · Bomb Operation · до 5 на 5</p>
+        <div class="createOptions">
+          <label
+            >БОТЫ Т<select id="botsA">
+              <option value="0">0 ботов</option>
+              <option value="1" selected>1 бот + ты</option>
+              <option value="2">2 бота + ты</option>
+              <option value="3">3 бота + ты</option>
+              <option value="4">4 бота + ты</option>
+            </select></label
+          ><label
+            >БОТЫ КТ<select id="botsB">
+              <option value="0">0 ботов</option>
+              <option value="1">1 бот</option>
+              <option value="2" selected>2 бота</option>
+              <option value="3">3 бота</option>
+              <option value="4">4 бота</option>
+            </select></label
+          >
+        </div>
+        <label
+          >СЛОЖНОСТЬ БОТОВ<select id="difficulty">
+            <option value="easy">Лёгкие</option>
+            <option value="normal" selected>Обычные</option>
+            <option value="hard">Сложные</option>
+          </select></label
+        >
+        <p id="createMessage" role="status">
+          Сначала приватный матч. Затем Esc → «Открыть для сети».
+        </p>
+        <button id="createPlay">СОЗДАТЬ И ИГРАТЬ ↗</button
+        ><button id="createCancel" class="secondary">НАЗАД</button>
+      </section>
+    </div>
+    <div
+      id="socialDialog"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="socialTitle"
+    >
+      <section class="socialShell">
+        <header>
+          <div>
+            <span class="eyebrow">DIRECT / ENCRYPTED</span>
+            <h2 id="socialTitle">ДРУЗЬЯ И ПЕРЕПИСКИ</h2>
+          </div>
+          <button
+            id="closeSocial"
+            class="secondary"
+            aria-label="Закрыть переписки"
+          >
+            ×
+          </button>
+        </header>
+        <div class="socialSetup">
+          <label
+            >ИМЯ В P2P<input
+              id="peerName"
+              maxlength="24"
+              value="OPERATOR" /></label
+          ><button id="savePeerName" class="secondary">СОХРАНИТЬ ИМЯ</button
+          ><label
+            >TCP-ПОРТ<input
+              id="peerPort"
+              type="number"
+              min="1024"
+              max="65535"
+              value="3090" /></label
+          ><button id="openPeer">ОТКРЫТЬ P2P</button
+          ><button id="closePeer" class="secondary" hidden>ЗАКРЫТЬ P2P</button>
+        </div>
+        <div class="inviteRow">
+          <label>ТВОЙ КОД ДРУГА<select id="peerInvite"></select></label
+          ><button id="copyPeerCode" class="secondary">КОПИРОВАТЬ КОД</button>
+        </div>
+        <p class="socialHint">
+          Оба откройте P2P, обменяйтесь кодами через доверенный канал и добавьте
+          друг друга. Работает в LAN / VPN или при настроенной маршрутизации.
+          Без офлайн-доставки.
+        </p>
+        <div class="addPeerRow">
+          <label
+            >КОД ОТ ДРУГА<input
+              id="friendCode"
+              placeholder="VLF1.…"
+              autocomplete="off"
+              spellcheck="false" /></label
+          ><button id="addPeer">＋ ДОБАВИТЬ</button>
+        </div>
+        <div class="socialBody">
+          <aside>
+            <h3>КОНТАКТЫ</h3>
+            <div id="peerList"></div>
+          </aside>
+          <div class="conversation">
+            <div class="chatHeading">
+              <b id="chatName">Выбери друга</b
+              ><button id="connectPeer" class="secondary" disabled>
+                ПОДКЛЮЧИТЬСЯ
+              </button>
+            </div>
+            <div id="chatMessages" role="log" aria-live="polite">
+              <p class="friendsEmpty">
+                Сообщения идут напрямую между приложениями.
+              </p>
+            </div>
+            <form id="chatForm">
+              <input
+                id="chatText"
+                maxlength="2000"
+                placeholder="Сообщение другу…"
+                autocomplete="off"
+                aria-label="Текст сообщения"
+              /><button id="sendPeer" type="submit">ОТПРАВИТЬ ↗</button>
+            </form>
+          </div>
+        </div>
+        <p id="socialStatus" role="status">
+          P2P доступен в приложении Electron.
+        </p>
+        <p class="socialPrivacy">
+          Сертификаты проверяются по коду друга. История хранится локально без
+          шифрования на диске. У приложения нет независимого аудита
+          безопасности.
+        </p>
+      </section>
+    </div>
+    <div id="fpsCounter" aria-hidden="true"></div>
+    <div id="fatal" hidden></div>
+    <script src="android-bootstrap.js"></script>
+    <script type="module" src="game.mjs"></script>
+  </body>
+</html>

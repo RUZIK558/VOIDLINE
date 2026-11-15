@@ -1,0 +1,241 @@
+{
+  "license": "CC0-1.0; original synthesis, no third-party recordings",
+  "sampleRate": 44100,
+  "sounds": {
+    "shot-rifle": {
+      "file": "shot-rifle.wav",
+      "seconds": 0.4,
+      "bytes": 35324
+    },
+    "shot-ak47": {
+      "file": "shot-ak47.wav",
+      "seconds": 0.5,
+      "bytes": 44144
+    },
+    "shot-m4a1s": {
+      "file": "shot-m4a1s.wav",
+      "seconds": 0.35,
+      "bytes": 30914
+    },
+    "shot-awp": {
+      "file": "shot-awp.wav",
+      "seconds": 0.81,
+      "bytes": 71486
+    },
+    "shot-ssg08": {
+      "file": "shot-ssg08.wav",
+      "seconds": 0.59,
+      "bytes": 52082
+    },
+    "shot-mp9": {
+      "file": "shot-mp9.wav",
+      "seconds": 0.32,
+      "bytes": 28268
+    },
+    "shot-p90": {
+      "file": "shot-p90.wav",
+      "seconds": 0.33,
+      "bytes": 29150
+    },
+    "shot-pistol": {
+      "file": "shot-pistol.wav",
+      "seconds": 0.32,
+      "bytes": 28268
+    },
+    "shot-glock": {
+      "file": "shot-glock.wav",
+      "seconds": 0.36,
+      "bytes": 31796
+    },
+    "shot-deagle": {
+      "file": "shot-deagle.wav",
+      "seconds": 0.58,
+      "bytes": 51200
+    },
+    "step-stone-0": {
+      "file": "step-stone-0.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-stone-1": {
+      "file": "step-stone-1.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-stone-2": {
+      "file": "step-stone-2.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-metal-0": {
+      "file": "step-metal-0.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-metal-1": {
+      "file": "step-metal-1.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-metal-2": {
+      "file": "step-metal-2.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-sand-0": {
+      "file": "step-sand-0.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-sand-1": {
+      "file": "step-sand-1.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-sand-2": {
+      "file": "step-sand-2.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-snow-0": {
+      "file": "step-snow-0.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-snow-1": {
+      "file": "step-snow-1.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "step-snow-2": {
+      "file": "step-snow-2.wav",
+      "seconds": 0.23,
+      "bytes": 20330
+    },
+    "reload-rifle": {
+      "file": "reload-rifle.wav",
+      "seconds": 1.05,
+      "bytes": 92654
+    },
+    "reload-pistol": {
+      "file": "reload-pistol.wav",
+      "seconds": 1.05,
+      "bytes": 92654
+    },
+    "reload-sniper": {
+      "file": "reload-sniper.wav",
+      "seconds": 1.05,
+      "bytes": 92654
+    },
+    "round": {
+      "file": "round.wav",
+      "seconds": 0.54,
+      "bytes": 47672
+    },
+    "live": {
+      "file": "live.wav",
+      "seconds": 0.4,
+      "bytes": 35324
+    },
+    "win": {
+      "file": "win.wav",
+      "seconds": 0.82,
+      "bytes": 72368
+    },
+    "loss": {
+      "file": "loss.wav",
+      "seconds": 0.72,
+      "bytes": 63548
+    },
+    "plant": {
+      "file": "plant.wav",
+      "seconds": 0.54,
+      "bytes": 47672
+    },
+    "defuse": {
+      "file": "defuse.wav",
+      "seconds": 0.58,
+      "bytes": 51200
+    },
+    "chat": {
+      "file": "chat.wav",
+      "seconds": 0.39,
+      "bytes": 34442
+    },
+    "buy": {
+      "file": "buy.wav",
+      "seconds": 0.35,
+      "bytes": 30914
+    },
+    "beep": {
+      "file": "beep.wav",
+      "seconds": 0.28,
+      "bytes": 24740
+    },
+    "hit": {
+      "file": "hit.wav",
+      "seconds": 0.28,
+      "bytes": 24740
+    },
+    "scope": {
+      "file": "scope.wav",
+      "seconds": 0.28,
+      "bytes": 24740
+    },
+    "explosion": {
+      "file": "explosion.wav",
+      "seconds": 1.3,
+      "bytes": 114704
+    },
+    "flash": {
+      "file": "flash.wav",
+      "seconds": 0.5,
+      "bytes": 44144
+    },
+    "hiss": {
+      "file": "hiss.wav",
+      "seconds": 0.9,
+      "bytes": 79424
+    },
+    "throw": {
+      "file": "throw.wav",
+      "seconds": 0.19,
+      "bytes": 16802
+    },
+    "bounce": {
+      "file": "bounce.wav",
+      "seconds": 0.18,
+      "bytes": 15920
+    },
+    "knife": {
+      "file": "knife.wav",
+      "seconds": 0.22,
+      "bytes": 19448
+    },
+    "hurt": {
+      "file": "hurt.wav",
+      "seconds": 0.22,
+      "bytes": 19448
+    },
+    "equip": {
+      "file": "equip.wav",
+      "seconds": 0.27,
+      "bytes": 23858
+    },
+    "land": {
+      "file": "land.wav",
+      "seconds": 0.27,
+      "bytes": 23858
+    },
+    "jump": {
+      "file": "jump.wav",
+      "seconds": 0.13,
+      "bytes": 11510
+    },
+    "dry": {
+      "file": "dry.wav",
+      "seconds": 0.1,
+      "bytes": 8864
+    }
+  }
+}

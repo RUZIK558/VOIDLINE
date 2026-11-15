@@ -1,0 +1,24 @@
+VOIDLINE 1.0.2 final release validation
+
+Automated regression: 189 passed; 0 failed; 0 skipped.
+All eight redesigned maps: five CT and five T spawn slots reach both sites.
+Sixteen upper rooms, thirty-two stairs: physical ascent/descent and navigation checks passed.
+Solid floors and ceilings: players, bullets and grenades; floor-aware drops and no through-floor pickup.
+Map timing: both sites, all spawn slots, ground Dijkstra plus stair/upper-storey shortcut portals.
+Uniform 5.2 m/s; minimum CT arrival advantage across worst CT / best T spawn pairs: 2.833–5.198 seconds.
+This is a route-time check, not an empirical win-rate balance claim or a guarantee for different player decisions.
+
+Original synthesized sounds: 47 local 44.1kHz/16-bit mono PCM files, CC0; no third-party recordings.
+Real Linux Electron: all samples decoded; real audio output nonzero, voice cleanup and live mute passed.
+All eight final map worlds rendered; direct framebuffer screenshots in previews/1.0.2-*.png.
+Native Linux XInput2: twelve repeated beyond-screen motions passed; Esc/chat releases capture.
+Shop T/CT role change and chat unread/toast safety checks passed.
+
+Packaged Linux: app version 1.0.2, early X11/XWayland selection, native relative input reaches server,
+all eight maps and all 47 bundled sounds load successfully. Test rendering used reduced settings for software GPU.
+Linux and Windows ASAR: 62 updated files including all audio samples exactly match source; no injected QA hooks.
+Actual AppImage extracted and its ASAR, launcher and XInput2 helper match the verified Linux directory.
+Windows installer archive: Everything is Ok. Built but NOT run on a physical Windows system.
+
+Limitations: no physical mouse/audio-device testing, no pure-Wayland validation, no sustained match win-rate statistics.
+All clients and the host/server should use 1.0.2: map geometry and height physics changed.

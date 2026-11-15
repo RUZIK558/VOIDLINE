@@ -1,0 +1,1 @@
+30 create/render/remove operators + guns; geometry and textures bounded: {"warm":{"geometries":0,"textures":6},"end":{"geometries":0,"textures":6},"geometries":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"textures":[2,4,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6]}

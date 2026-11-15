@@ -1,0 +1,7 @@
+Packaged Linux launcher selects X11 before startup with both DISPLAY and WAYLAND_DISPLAY PASS
+Packaged ASAR starts its unpacked native XInput2 helper PASS
+Packaged native deltas reach the authoritative server across four beyond-screen motions PASS
+Packaged client: short V places a server-authenticated world/radar marker PASS
+Packaged client: held V redirects Linux native motion to selection without aim movement; release sends Go B PASS
+Esc releases capture; no page errors in packaged client PASS
+Packaged client serves all eight new multilevel maps and decodes all 47 bundled sound samples PASS

@@ -1,0 +1,3 @@
+PASS Final packaged Linux 1.0.9 opens the real game UI and VCAC verifies its actual ASAR
+PASS Packaged startup helper opens Chromium UI despite the exact readiness timeout from the report
+PASS Boot/navigation log is nonempty; no renderer JavaScript errors; no profile reset

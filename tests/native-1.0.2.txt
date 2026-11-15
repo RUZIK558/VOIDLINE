@@ -1,0 +1,11 @@
+Native Linux startup uses explicit pre-start X11 flag even with WAYLAND_DISPLAY PASS
+Shop renders current T model, not default CT PASS
+Shop rebuilds same selected item on role change / halftime PASS
+Real Electron pointer lock starts native XInput2 backend PASS
+12 repeated +700 relative motions rotate indefinitely without Esc / screen-edge clamp PASS
+Esc stops raw capture; out-of-game motion cannot rotate camera PASS
+Opening chat releases native input and preserves editable input PASS
+Real received chat message shows toast + unread badge, HTML stays inert PASS
+Opening chat clears unread; own message does not notify PASS
+P2P unread notification and menu badge PASS
+No JavaScript errors / fatal overlay PASS

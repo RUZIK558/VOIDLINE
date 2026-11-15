@@ -1,0 +1,8 @@
+VOIDLINE 1.0.0
+Full regression: 173/173 passed, no skipped tests.
+Client Chromium QA: passed, including all 10 firearm view models and muzzle sockets.
+Windows NSIS installer: cross-build successful; 7zz integrity test successful (79 files).
+Linux AppImage: build and extraction successful; extracted ASAR matches source package.
+19 updated application files match both packaged ASARs; runtime dependencies present; QA hooks not shipped.
+Windows native execution and physical-computer multiplayer not tested.
+Linux native launch unavailable in sandbox (missing libgtk-3.so.0); browser tests do not validate native Wayland/X11.

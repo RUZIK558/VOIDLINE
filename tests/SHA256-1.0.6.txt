@@ -1,0 +1,3 @@
+e5dcb347178bac67c8d99e76ec9e46b97b5ec89569ffd62eca8ee27f26dc38ee  dist/VOIDLINE-1.0.6-Linux-x86_64.AppImage
+a5db207bc68216426c92a2ec388a5f5ae2f36a833e717a1a0ff0c53f6b2d69a9  dist/VOIDLINE-1.0.6-Setup-x64.exe
+f41ff8b88397c8a4065ad9dc099c2f67517d8377d1bd077ab356a72de5c9f974  dist/VOIDLINE-1.0.6-Windows-x64.exe

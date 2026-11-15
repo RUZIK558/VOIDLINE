@@ -1,0 +1,14 @@
+PASS Tap V sends exactly one real server ping and does not open the command wheel
+PASS Ally receives real ping; enemy receives neither marker nor radio event
+PASS Middle mouse places a ping without firing and replaces the previous own marker
+PASS Held V opens six phrases; native relative mouse selects A without camera motion, movement or firing
+PASS Releasing V commits selected command and immediately restores normal unlimited mouse aiming
+PASS Release in the dead zone cancels without a ping or command
+PASS All six real quick commands select by 1–6 and send on V release, including the exact requested phrase
+PASS butterfly: actual Digit3, F inspect, primary and secondary attacks animate a wrist-attached knife without errors
+PASS karambit: actual Digit3, F inspect, primary and secondary attacks animate a wrist-attached knife without errors
+PASS Esc cancels held radio without accidental ping and releases native capture
+PASS Typing V in chat cannot place a marker or open quick commands
+PASS World/radar markers expire and are removed instead of accumulating
+PASS VCAC development report reaches live VSAC; normal 60Hz traffic has zero rejections
+PASS No page errors or fatal overlay in Linux Electron

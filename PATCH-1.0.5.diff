@@ -1,0 +1,553 @@
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -1,3 +1,9 @@
++## 1.0.5 — восстановление запуска и ножи по референсам
++
++- Приватная Chromium-сессия DIRECT, проверка HTTP-готовности, до трёх попыток загрузки, журнал и ручной повтор вместо мгновенного выхода.
++- Изогнутый профиль клинка и фигурная рукоять керамбита; перфорированные металлические рукояти бабочки.
++- Осмотр дополнен движением свободных пальцев, поворотом кисти и паузой показа клинка.
++
+ ## 1.0.4 — шарниры ножей и компактные метки
+ 
+ - Бабочка: неподвижная безопасная рукоять, согласованные повороты свободной рукояти и лезвия вокруг Y-шарниров; лезвие помещается в закрытой рукояти.
+--- /dev/null
++++ b/QA-1.0.5-RU.md
+@@ -0,0 +1,10 @@
++# Проверки VOIDLINE 1.0.5
++
++- tests/regression-1.0.5.txt — полный регрессионный прогон, включая шесть новых тестов загрузки.
++- tests/startup-105.test.mjs — повтор ERR_FAILED, обработка ERR_ABORTED только с реально готовым интерфейсом, предел попыток, закрытое окно, настоящий HTTP probe, отказ для пустого/ошибочного HTML и внешнего адреса.
++- tools/qa-v105-startup.cjs / tests/startup-native-1.0.5.txt — настоящий Electron под X11: запуск с заведомо нерабочим прокси, DIRECT в собственной сессии, принудительный обрыв первой загрузки документа с реальным ERR_FAILED (-2), повторная загрузка, сохранённые настройки.
++- tools/qa-v105-visual.cjs / tests/visual-1.0.5.txt — новые Three.js-модели, фиксированные шарниры/кольцо, все четыре клипа, по 120 циклов прерывания без накопления смещения, компактные метки и меню при 1280×800 / 390×780. Кадры: previews/1.0.5-*.png.
++- tools/qa-v105-native.cjs — настоящие нажатия 3/F, ЛКМ/ПКМ для обоих ножей, XInput2, V/СКМ и шесть фраз, отмена, ввод V в чате, TTL и недоставка противнику.
++- tools/qa-v105-package.cjs — готовый Linux-пакет, нативный помощник из ASAR, новые модули ножей, компактные метки, восемь карт и 47 WAV. Содержимое Linux/Windows ASAR сравнивается с исходниками; AppImage и NSIS проверяются отдельно.
++
++Ограничения: Windows собрана без нативного запуска на Windows. Linux QA использует Xvfb/X11, программный GPU, а не физическую мышь/видеокарту; чистый Wayland не проверен. Воспроизведён сам ERR_FAILED (-2), но точная причина на устройстве пользователя без diagnostics.log не установлена. Модели оригинальные, созданные по визуальным референсам; не импорт из присланных 3D-файлов.
+--- a/README.md
++++ b/README.md
+@@ -1,3 +1,7 @@
++## Обновление 1.0.5
++
++Восстановление загрузки локального интерфейса после ERR_FAILED (-2), прямая Chromium-сессия без системного прокси, готовность HTTP и журнал. Ножи перестроены по визуальным референсам: криволинейный керамбит, перфорированные рукояти бабочки, новые жесты осмотра. См. RELEASE-1.0.5-RU.md и QA-1.0.5-RU.md.
++
+ ## Обновление 1.0.4
+ 
+ Бабочка и керамбит: исправлены оси вращения, крепление к кисти, вынимание, осмотр и удары. Метки упрощены до небольшого ромба и расстояния, без имён и длинных плашек; быстрые команды остаются в двухстрочной ленте. См. RELEASE-1.0.4-RU.md и QA-1.0.4-RU.md.
+--- /dev/null
++++ b/RELEASE-1.0.5-RU.md
+@@ -0,0 +1,15 @@
++# VOIDLINE 1.0.5
++
++## Загрузка локального интерфейса
++- Chromium-сессия игры использует прямое подключение: системный HTTP/PAC-прокси не должен перехватывать приватный 127.0.0.1 или LAN. Настройки прокси операционной системы и других приложений не меняются.
++- Перед навигацией проверяется настоящий HTML локального сервера. Временный сбой навигации (включая ERR_FAILED -2) повторяется до трёх раз; уже успешно открывшийся интерфейс при отменённой навигации не считается фатальной ошибкой.
++- Если загрузка всё же не удалась, доступны «Повторить», «Показать журнал», «Закрыть» вместо немедленного завершения. Профиль, настройки и инвентарь не сбрасываются.
++- В diagnostics.log записываются готовность сервера, выбранное подключение, ошибки/попытки и успешная загрузка. По одному скриншоту нельзя установить точную системную причину сбоя; журнал нужен, если ошибка сохраняется.
++
++## Ножи по присланным визуальным референсам
++- Керамбит: новый плавно изогнутый заострённый клинок, фигурная рукоять с подпальцевыми выемками, кольцо и крепёж. Убрана прежняя угловатая «лопатка».
++- Бабочка: фигурные металлические боковые пластины с настоящими сквозными прорезями и внутренним каналом, плавный профиль клинка, шарниры и замок. Убраны неоновые накладки-плашки.
++- Осмотр: движение свободных пальцев, поворот кисти, оборот керамбита вокруг кольца с паузой показа клинка; бабочка сохраняет согласованное складывание/раскрытие вокруг осей шарниров.
++- Это собственная геометрия и анимация, созданная по картинкам/GIF. Готовых 3D-файлов и скелетных клипов во вложениях не было; чужие игровые модели/текстуры не извлекались.
++
++Управление: 3 — нож, F — осмотр, ЛКМ/ПКМ — обычный/тяжёлый удар. Урон и задержки ударов не менялись. Метки и команды версии 1.0.4 сохранены. Для совместной игры рекомендуется одинаковая версия клиента и сервера — 1.0.5.
+--- a/electron.cjs
++++ b/electron.cjs
+@@ -1,4 +1,4 @@
+-const { app, BrowserWindow, ipcMain, dialog, Menu } = require("electron");
++const { app, BrowserWindow, ipcMain, dialog, Menu, session, shell } = require("electron");
+ const path = require("node:path");
+ // Prefer XWayland on Linux when available: compositor-confined Wayland pointer
+ // motion must not be mistaken for an infinite relative stream.
+@@ -11,6 +11,7 @@
+  try{const dir=app.getPath('userData');fs.mkdirSync(dir,{recursive:true});const file=path.join(dir,'diagnostics.log');if(fs.existsSync(file)&&fs.statSync(file).size>1024*1024){fs.rmSync(file+'.previous',{force:true});fs.renameSync(file,file+'.previous');}fs.appendFileSync(file,JSON.stringify({time:new Date().toISOString(),version:app.getVersion(),kind,message:String(message).slice(0,4000)})+'\n');}catch{}
+ }
+ let server, win, social, display, linuxMouse;
++let openUI;
+ app.whenReady().then(async () => {
+   Menu.setApplicationMenu(null);
+   try {
+@@ -34,6 +35,12 @@
+     display = createDisplayController();
+     const savedSettings = await settingsStore.load();
+     const origin = `http://127.0.0.1:${server.port}`;
++    // The private UI and LAN/P2P sockets must not go through OS/PAC/VPN HTTP proxies.
++    // This is scoped to the game's own Chromium session, not the OS or other apps.
++    const gameSession=session.fromPartition('persist:voidline-game');
++    await gameSession.setProxy({mode:'direct'});
++    await gameSession.closeAllConnections();
++    recordDiagnostic('ui-proxy',await gameSession.resolveProxy(origin));
+     win = new BrowserWindow({
+       width: 1500,
+       height: 940,
+@@ -41,9 +48,10 @@
+       minHeight: 700,
+       backgroundColor: "#0a1119",
+       autoHideMenuBar: true,
+-      title: "VOIDLINE / Stabilization 1.0.4",
++      title: "VOIDLINE / Stabilization 1.0.5",
+       webPreferences: {
+         preload: path.join(__dirname, "preload.cjs"),
++        session: gameSession,
+         nodeIntegration: false,
+         contextIsolation: true,
+         sandbox: true,
+@@ -57,6 +65,10 @@
+         sendStatus:value=>{if(!win.isDestroyed())win.webContents.send('voidline:mouse-status',value);}});
+       win.on('blur',()=>linuxMouse.stop());win.on('minimize',()=>linuxMouse.stop());win.on('closed',()=>linuxMouse.close());
+     }
++    const {loadLocalUI}=await import('./startup.mjs');
++    const uiReady=async()=>{try{return !win.isDestroyed()&&new URL(win.webContents.getURL()).origin===origin&&await win.webContents.executeJavaScript('!!document.getElementById("createOpen")');}catch{return false;}};
++    openUI=()=>loadLocalUI({origin,load:url=>win.loadURL(url),ready:uiReady,log:recordDiagnostic,isClosed:()=>shuttingDown||win.isDestroyed()});
++    win.webContents.on('did-fail-load',(_e,code,description,url,main)=>{if(main)recordDiagnostic('navigation-failed',JSON.stringify({code,description,url}));});
+     win.removeMenu();
+     win.webContents.setIgnoreMenuShortcuts(true);
+     win.webContents.setZoomFactor(1);
+@@ -82,7 +94,7 @@
+       linuxMouse?.stop();
+       recordDiagnostic('renderer-gone',JSON.stringify(details));
+       const r=await dialog.showMessageBox(win,{type:'error',title:'VOIDLINE: сбой графики',message:'Игровой процесс завершился: '+details.reason,detail:'Журнал сохранён в diagnostics.log в папке данных приложения. Можно перезапустить игру на низких настройках.',buttons:['Перезапустить · низкая графика','Закрыть'],defaultId:0,cancelId:1});
+-      if(r.response===0&&!win.isDestroyed()){const old=await settingsStore.load();await settingsStore.save({...old,frameCap:60,renderScale:.65,renderResolution:'native',shadows:'off',aa:'fxaa'});await win.loadURL(origin);}else app.quit();
++      if(r.response===0&&!win.isDestroyed()){const old=await settingsStore.load();await settingsStore.save({...old,frameCap:60,renderScale:.65,renderResolution:'native',shadows:'off',aa:'fxaa'});await openUI();}else app.quit();
+     });
+     let diagnosticCount=0;const logReset=setInterval(()=>diagnosticCount=0,60000);logReset.unref();
+     ipcMain.handle('voidline:diagnostic',(event,entry)=>{
+@@ -163,10 +175,17 @@
+       }
+     });
+     if (savedSettings.windowMode === "borderless") win.setFullScreen(true);
+-    await win.loadURL(origin);
++    await openUI();
+   } catch (error) {
+-    dialog.showErrorBox("VOIDLINE: ошибка запуска", error.message);
+-    app.quit();
++    recordDiagnostic('startup-failed',error.stack||error.message);
++    if(!win||win.isDestroyed()){dialog.showErrorBox('VOIDLINE: ошибка запуска',error.message);app.quit();return;}
++    let errorMessage=error.message;
++    while(!shuttingDown&&!win.isDestroyed()){
++      const choice=await dialog.showMessageBox(win,{type:'error',title:'VOIDLINE: ошибка загрузки интерфейса',message:'Не удалось открыть игровой интерфейс.',detail:errorMessage+'\n\nПодробности сохранены в diagnostics.log. Настройки и инвентарь не удалены.',buttons:['Повторить','Показать журнал','Закрыть'],defaultId:0,cancelId:2});
++      if(choice.response===1){shell.showItemInFolder(path.join(app.getPath('userData'),'diagnostics.log'));continue;}
++      if(choice.response!==0||!openUI){app.quit();break;}
++      try{await openUI();break;}catch(e){errorMessage=e.message;recordDiagnostic('startup-retry-failed',errorMessage);}
++    }
+   }
+ });
+ app.on('child-process-gone',(_event,details)=>recordDiagnostic('child-process-gone',JSON.stringify(details)));
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "voidline-arena",
+-  "version": "1.0.4",
++  "version": "1.0.5",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "voidline-arena",
+-      "version": "1.0.4",
++      "version": "1.0.5",
+       "license": "MIT",
+       "dependencies": {
+         "selfsigned": "^2.4.1",
+@@ -708,8 +708,8 @@
+       }
+     },
+     "node_modules/@types/responselike": {
+-      "version": "1.0.4",
+-      "resolved": "https://registry.npmjs.org/@types/responselike/-/responselike-1.0.4.tgz",
++      "version": "1.0.5",
++      "resolved": "https://registry.npmjs.org/@types/responselike/-/responselike-1.0.5.tgz",
+       "integrity": "sha512-H/+L+UkTV33uf49PH5pCAUBVPNj2nDBXTN+qS1dOwyyg24l3CcicicCA7ca+HMvJBZcFgl5r8e+RR6elsb4Lyw==",
+       "dev": true,
+       "license": "MIT",
+@@ -1309,8 +1309,8 @@
+       }
+     },
+     "node_modules/clone-response": {
+-      "version": "1.0.4",
+-      "resolved": "https://registry.npmjs.org/clone-response/-/clone-response-1.0.4.tgz",
++      "version": "1.0.5",
++      "resolved": "https://registry.npmjs.org/clone-response/-/clone-response-1.0.5.tgz",
+       "integrity": "sha512-ROoL94jJH2dUVML2Y/5PEDNaSHgeOdSDicUyS7izcF63G6sTc/FTjLub4b8Il9S8S0beOfYt0TaA5qvFK+w0wA==",
+       "dev": true,
+       "license": "MIT",
+@@ -1382,8 +1382,8 @@
+       "license": "MIT"
+     },
+     "node_modules/core-util-is": {
+-      "version": "1.0.4",
+-      "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.4.tgz",
++      "version": "1.0.5",
++      "resolved": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.5.tgz",
+       "integrity": "sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==",
+       "dev": true,
+       "license": "MIT"
+@@ -2259,7 +2259,7 @@
+       "license": "ISC",
+       "dependencies": {
+         "fs.realpath": "^1.0.0",
+-        "inflight": "^1.0.4",
++        "inflight": "^1.0.5",
+         "inherits": "2",
+         "minimatch": "^3.1.1",
+         "once": "^1.3.0",
+@@ -2337,8 +2337,8 @@
+       }
+     },
+     "node_modules/globalthis": {
+-      "version": "1.0.4",
+-      "resolved": "https://registry.npmjs.org/globalthis/-/globalthis-1.0.4.tgz",
++      "version": "1.0.5",
++      "resolved": "https://registry.npmjs.org/globalthis/-/globalthis-1.0.5.tgz",
+       "integrity": "sha512-DpLKbNU4WylpxJykQujfCcwYWiV/Jhm50Goo0wrVILAv5jOr9d+H+UR3PhSCD2rCCEIg0uc+G+muBTwD54JhDQ==",
+       "dev": true,
+       "license": "MIT",
+@@ -2444,7 +2444,7 @@
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+-        "has-symbols": "^1.0.4"
++        "has-symbols": "^1.0.5"
+       },
+       "engines": {
+         "node": ">= 0.4"
+@@ -2501,8 +2501,8 @@
+       }
+     },
+     "node_modules/http2-wrapper": {
+-      "version": "1.0.4",
+-      "resolved": "https://registry.npmjs.org/http2-wrapper/-/http2-wrapper-1.0.4.tgz",
++      "version": "1.0.5",
++      "resolved": "https://registry.npmjs.org/http2-wrapper/-/http2-wrapper-1.0.5.tgz",
+       "integrity": "sha512-V+23sDMr12Wnz7iTcDeJr3O6AIxlnvT/bmaAAAP/Xda35C90p9599p0F1eHR/N1KILWSoWVAiOMFjBBXaXSMxg==",
+       "dev": true,
+       "license": "MIT",
+@@ -2595,7 +2595,7 @@
+       "license": "Apache-2.0",
+       "dependencies": {
+         "async": "^3.2.6",
+-        "filelist": "^1.0.4",
++        "filelist": "^1.0.5",
+         "picocolors": "^1.1.1"
+       },
+       "bin": {
+--- a/package.json
++++ b/package.json
+@@ -1,8 +1,8 @@
+ {
+   "name": "voidline-arena",
+-  "version": "1.0.4",
++  "version": "1.0.5",
+   "private": true,
+-  "description": "VOIDLINE — articulated knives and compact team pings",
++  "description": "VOIDLINE — resilient local startup and reference-based knives",
+   "main": "electron.cjs",
+   "type": "module",
+   "scripts": {
+@@ -48,8 +48,10 @@
+       "RELEASE-1.0.1-RU.md",
+       "RELEASE-1.0.2-RU.md",
+       "tactical-channel.mjs",
+-      "RELEASE-1.0.4-RU.md",
+-      "RELEASE-1.0.3-RU.md"
++      "RELEASE-1.0.5-RU.md",
++      "RELEASE-1.0.3-RU.md",
++      "startup.mjs",
++      "RELEASE-1.0.4-RU.md"
+     ],
+     "win": {
+       "target": [
+--- /dev/null
++++ b/startup.mjs
+@@ -0,0 +1,25 @@
++import http from 'node:http';
++const sleep=ms=>new Promise(r=>setTimeout(r,ms));
++// Only probe the private listener, never an address supplied by a peer or a proxy.
++export function probeLocalUI(origin,{timeout=1500}={}){
++ const url=new URL('/',origin);
++ if(url.protocol!=='http:'||url.hostname!=='127.0.0.1')return Promise.reject(new Error('UI must use private IPv4 loopback'));
++ return new Promise((resolve,reject)=>{let size=0,body='';const req=http.get(url,{agent:false},res=>{
++  res.setEncoding('utf8');res.on('data',s=>{size+=s.length;if(size>1024*1024){req.destroy(new Error('UI response too large'));return;}body+=s;});
++  res.on('end',()=>res.statusCode===200&&body.includes('id="createOpen"')?resolve({status:200,bytes:size}):reject(new Error('Local UI not ready: HTTP '+res.statusCode)));
++  res.on('error',reject);
++ });req.setTimeout(timeout,()=>req.destroy(new Error('Local UI readiness timeout')));req.on('error',reject);});
++}
++export async function loadLocalUI({origin,load,ready=()=>false,probe=probeLocalUI,log=()=>{},attempts=3,delay=sleep,isClosed=()=>false}){
++ const url=new URL('/',origin).href;let last;
++ for(let i=0;i<attempts;i++){
++  if(isClosed())return {closed:true};
++  try{const status=await probe(origin);log('ui-ready',JSON.stringify(status));await load(url);if(!await ready())throw Error('Loaded document has no game interface');log('ui-loaded',url);return {attempts:i+1,url};}
++  catch(e){last=e;log('ui-load-failed',JSON.stringify({attempt:i+1,code:e.code,errno:e.errno,message:e.message,url}));
++   // ERR_ABORTED can be a superseded navigation while the requested UI has loaded.
++   if(await Promise.resolve().then(ready).catch(()=>false)){log('ui-recovered','Interface already loaded');return {attempts:i+1,url,recovered:true};}
++   if(i+1<attempts)await delay([180,500,1000][i]??1000);
++  }
++ }
++ throw new Error('Не удалось открыть локальный интерфейс после '+attempts+' попыток. '+(last?.message||''),{cause:last});
++}
+--- a/public/diagnostics.mjs
++++ b/public/diagnostics.mjs
+@@ -8,7 +8,7 @@
+   window.voidlineDiagnostics?.record(entry)?.catch(()=>{});
+  };
+  async function saveReport(){
+-  const text=JSON.stringify({version:'1.0.4',info:getInfo(),events:records},null,2),a=document.createElement('a');
++  const text=JSON.stringify({version:'1.0.5',info:getInfo(),events:records},null,2),a=document.createElement('a');
+   const url=URL.createObjectURL(new Blob([text],{type:'text/plain'}));a.href=url;a.download='VOIDLINE-diagnostics.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  async function safeReload(){
+--- a/public/game.mjs
++++ b/public/game.mjs
+@@ -79,7 +79,7 @@
+ const postFX = createPostFX(renderer);
+ let prefs = normalizeSettings(null),
+   inventoryUI;
+-const diagnostics=setupDiagnostics(()=>({version:'1.0.4',platform:navigator.platform,userAgent:navigator.userAgent,graphics:{shadows:prefs.shadows,renderScale:prefs.renderScale,aa:prefs.aa},gpu:{...renderer.info.memory}}));
++const diagnostics=setupDiagnostics(()=>({version:'1.0.5',platform:navigator.platform,userAgent:navigator.userAgent,graphics:{shadows:prefs.shadows,renderScale:prefs.renderScale,aa:prefs.aa},gpu:{...renderer.info.memory}}));
+ const down = (name) => actionDown(keys, prefs, name);
+ const scene = new THREE.Scene();
+ scene.background = new THREE.Color("#a7d5e5");
+--- a/public/index.html
++++ b/public/index.html
+@@ -3,7 +3,7 @@
+   <head>
+     <meta charset="UTF-8" />
+     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+-    <title>VOIDLINE — Stabilization 1.0.4</title>
++    <title>VOIDLINE — Stabilization 1.0.5</title>
+     <link rel="icon" type="image/svg+xml" href="assets/voidline.svg" />
+     <link rel="stylesheet" href="style.css" />
+   </head>
+@@ -13,7 +13,7 @@
+     <main id="menu" class="lobbyMenu">
+       <header class="lobbyTop">
+         <a class="lobbyLogo" href="#" aria-label="VOIDLINE">V/</a
+-        ><span class="edition">VOIDLINE<br /><small>FIX / 1.0.4</small></span>
++        ><span class="edition">VOIDLINE<br /><small>FIX / 1.0.5</small></span>
+         <nav aria-label="Разделы игры">
+           <button data-pane="arsenal">АРСЕНАЛ</button
+           ><button data-pane="inventory">ИНВЕНТАРЬ</button
+@@ -138,7 +138,7 @@
+         <p class="railFoot">P2P · TLS 1.3<br />Без центрального сервера</p>
+       </aside>
+       <footer class="lobbyFooter">
+-        <span>VOIDLINE / 1.0.4</span
++        <span>VOIDLINE / 1.0.5</span
+         ><span>Оригинальные модели и окружение · LAN / VPN</span>
+       </footer>
+     </main>
+--- /dev/null
++++ b/public/knife-geometry.mjs
+@@ -0,0 +1,20 @@
++import * as T from '/vendor/three.module.js';
++// Original silhouettes authored from visual references, not extracted third-party meshes.
++export function extrudeProfile(shape,{thickness=.010,bevel=.002,handle=false}={}){
++ const g=new T.ExtrudeGeometry(shape,{depth:thickness,steps:1,curveSegments:24,bevelEnabled:true,bevelSize:bevel,bevelThickness:bevel*.65,bevelSegments:3});
++ g.rotateX(handle?Math.PI/2:-Math.PI/2);g.translate(0,handle?thickness/2:-thickness/2,0);return g;
++}
++export function butterflyBlade(){
++ const s=new T.Shape();s.moveTo(-.015,0);s.lineTo(-.017,.11);s.bezierCurveTo(-.020,.167,-.009,.218,.002,.237);s.bezierCurveTo(.016,.218,.029,.173,.026,.12);s.lineTo(.018,.025);s.lineTo(.018,0);s.closePath();return extrudeProfile(s,{thickness:.007,bevel:.0025});
++}
++export function butterflyPlate(){
++ const s=new T.Shape();s.moveTo(-.017,-.014);s.lineTo(.017,-.014);s.quadraticCurveTo(.020,.002,.017,.035);s.lineTo(.013,.232);s.quadraticCurveTo(.012,.248,0,.25);s.quadraticCurveTo(-.012,.248,-.013,.232);s.lineTo(-.017,.035);s.closePath();
++ for(let i=0;i<5;i++){const z=.025+i*.041,w=.0065-i*.0003,l=.025;const h=new T.Path();h.moveTo(-w,z);h.lineTo(-w,z+l-.004);h.quadraticCurveTo(0,z+l+.002,w,z+l-.004);h.lineTo(w,z+.004);h.quadraticCurveTo(0,z-.002,-w,z);s.holes.push(h);}
++ return extrudeProfile(s,{thickness:.005,bevel:.0008,handle:true});
++}
++export function karambitBlade(){
++ const s=new T.Shape();s.moveTo(-.023,.052);s.bezierCurveTo(-.071,.082,-.132,.155,-.132,.213);s.bezierCurveTo(-.134,.246,-.117,.280,-.094,.303);s.bezierCurveTo(-.103,.267,-.093,.230,-.066,.201);s.bezierCurveTo(-.037,.172,.008,.143,.025,.071);s.lineTo(.013,.052);s.closePath();return extrudeProfile(s,{thickness:.008,bevel:.0025});
++}
++export function karambitGrip(){
++ const s=new T.Shape();s.moveTo(-.017,-.088);s.bezierCurveTo(-.036,-.059,-.040,-.025,-.042,.001);s.quadraticCurveTo(-.060,.030,-.040,.052);s.lineTo(-.023,.060);s.lineTo(.023,.058);s.quadraticCurveTo(.044,.043,.023,.031);s.quadraticCurveTo(.042,.018,.024,.009);s.quadraticCurveTo(.043,-.007,.026,-.016);s.quadraticCurveTo(.044,-.031,.030,-.041);s.quadraticCurveTo(.043,-.058,.025,-.075);s.lineTo(.023,-.088);s.closePath();return extrudeProfile(s,{thickness:.026,bevel:.003});
++}
+--- a/public/knife-motion.mjs
++++ b/public/knife-motion.mjs
+@@ -18,15 +18,19 @@
+  const inspect=carry([0,.18,.78,1],[0,-.055,-.055,0],[0,.075,.075,0],[0,-.045,-.045,0],[0,.16,.16,0],[0,-.12,-.12,0]);
+  const equip=carry([0,.42,.8,1],[.035,0,0,0],[-.30,.025,0,0],[.08,0,0,0],[-.6,.16,0,0],[.12,-.08,0,0]);
+  if(id==='butterfly'){
++  for(const axis of ['x','z']){const idx=inspect.findIndex(([p])=>p===`R_Hand.rotation[${axis}]`);inspect[idx]=tr(`R_Hand.rotation[${axis}]`,[0,.18,.38,.74,.9,1],axis==='x'?[0,.12,.36,.36,.12,0]:[0,.12,.40,.40,.12,0]);}
+   const t=[0,.12,.27,.43,.52,.70,.88,1];
+   inspect.push(tr('SwingPivot.rotation[y]',t,[0,0,-.08,-pi,-pi,-2*pi,-2*pi,-2*pi]),tr('BiteHandle.rotation[y]',t,[0,-pi,-pi,-pi,-pi,-pi,-2*pi,-2*pi]));
+   equip.push(tr('SwingPivot.rotation[y]',[0,.18,.62,.8,1],[pi,pi,0,0,0]),tr('BiteHandle.rotation[y]',[0,.18,.62,.9,1],[pi,pi,pi,0,0]));
+  }else{
+   // A single forward orbit about the index ring, not a propeller about the weapon centre.
+-  inspect.push(tr('RingPivot.rotation[y]',[0,.2,.30,.69,.80,1],[0,0,-.16,-2*pi,-2*pi,-2*pi]));
++  inspect.push(tr('RingPivot.rotation[y]',[0,.10,.34,.46,.78,1],[0,0,-2*pi,-2*pi,-2*pi,-2*pi]));
++  for(const axis of ['x','z']){const idx=inspect.findIndex(([p])=>p===`R_Hand.rotation[${axis}]`);inspect[idx]=tr(`R_Hand.rotation[${axis}]`,[0,.15,.40,.72,.88,1],axis==='x'?[0,.12,.42,.42,.12,0]:[0,-.14,-.84,-.84,-.14,0]);}
++
+   equip.push(tr('RingPivot.rotation[y]',[0,.12,.70,.87,1],[pi,pi,0,0,0]));
+  }
++ for(let finger=1;finger<=3;finger++)for(const action of [inspect,equip])action.push(tr(`R_Finger${finger}_1.rotation[x]`,[0,.16,.34,.76,1],[0,-.45,-.6,-.18,0]));
+  const fire=carry([0,.22,.48,.74,1],[0,.035,-.28,-.12,0],[0,.035,.015,-.025,0],[0,.035,-.12,-.06,0],[0,.14,-.18,-.08,0],[0,.30,-.48,-.22,0]);
+  const heavy=carry([0,.26,.48,.72,1],[0,.055,-.045,-.02,0],[0,.035,-.025,-.015,0],[0,.12,-.32,-.16,0],[0,.28,-.22,-.08,0],[0,.12,-.16,-.07,0]);
+- return [{name:'inspect',duration:id==='butterfly'?2.45:1.85,tracks:inspect},{name:'equip',duration:id==='butterfly'?.82:.64,tracks:equip},{name:'fire',duration:.45,tracks:fire},{name:'heavy',duration:.85,tracks:heavy}];
++ return [{name:'inspect',duration:id==='butterfly'?2.6:3.0,tracks:inspect},{name:'equip',duration:id==='butterfly'?.82:.64,tracks:equip},{name:'fire',duration:.45,tracks:fire},{name:'heavy',duration:.85,tracks:heavy}];
+ }
+--- a/public/knives.mjs
++++ b/public/knives.mjs
+@@ -1,13 +1,14 @@
+ import * as T from '/vendor/three.module.js';
+ import {clip} from './rigging.mjs';
+ import {knifeMotion} from './knife-motion.mjs';
++import {butterflyBlade,butterflyPlate,karambitBlade,karambitGrip} from './knife-geometry.mjs';
+ // Original procedural knife meshes. Metallic bevels, physical hinge pivots, no external models.
+ export function buildKnife(id){
+  const g=new T.Group();
+  const steel=new T.MeshStandardMaterial({color:'#b7cdd5',metalness:.68,roughness:.25});
+  const grip=new T.MeshStandardMaterial({color:id==='m9'?'#344a3c':'#253443',metalness:.5,roughness:.36});
+  const edge=new T.MeshStandardMaterial({color:'#e2eef4',metalness:.96,roughness:.15});
+- const accent=new T.MeshStandardMaterial({color:id==='butterfly'?'#55d5e0':id==='karambit'?'#ae80e7':'#9caa8c',metalness:.8,roughness:.28});
++ const accent=new T.MeshStandardMaterial({color:id==='butterfly'?'#7d969e':id==='karambit'?'#657780':'#9caa8c',metalness:.8,roughness:.28});
+  const add=(parent,geometry,mat,x=0,y=0,z=0,role)=>{const m=new T.Mesh(geometry,mat);m.position.set(x,y,z);if(role)m.userData.paintRole=role;parent.add(m);return m;};
+  const box=(p,x,y,z,w,h,d,mat=grip,role)=>add(p,new T.BoxGeometry(w,h,d),mat,x,y,z,role);
+  function blade(parent,points){
+@@ -22,19 +23,19 @@
+  if(id==='butterfly'){
+   const swing=new T.Group();swing.name='SwingPivot';swing.position.set(-.025,0,-.11);g.add(swing);
+   const pivot=new T.Group();pivot.name='BladePivot';pivot.position.x=.025;swing.add(pivot);
+-  blade(pivot,[[-.021,0],[-.023,.12],[0,.233],[.026,.12],[.022,0]]);
++  add(pivot,butterflyBlade(),steel,0,0,0,'body');
+   for(const [name,x] of [['SafeHandle',-.025],['BiteHandle',.025]]){
+    const h=new T.Group();h.name=name;if(name==='SafeHandle'){h.position.set(x,0,-.11);g.add(h);}else{h.position.x=.05;swing.add(h);}
+-   for(const side of [-1,1]){box(h,0,side*.018,.115,.035,.012,.25,grip,'trim');for(let j=0;j<5;j++)box(h,0,side*.025,.04+j*.039,.016,.004,.016,accent);}
+-   box(h,0,0,.235,.035,.04,.014,grip,'trim');pin(h,0,0);pin(h,0,.225);
++   for(const side of [-1,1])add(h,butterflyPlate(),steel,0,side*.014,0,'trim');
++   for(const side of [-1,1])box(h,side*.014,0,.13,.004,.022,.195,grip,'trim');
++   box(h,0,0,.239,.024,.025,.012,grip,'trim');pin(h,0,0);pin(h,0,.226);
+   }
+   box(g.getObjectByName('BiteHandle'),0,0,.255,.012,.035,.04,accent);
+  }else if(id==='karambit'){
+-  blade(g,[[-.022,.055],[-.070,.10],[-.110,.18],[-.090,.26],[-.030,.29],[.010,.27],[-.028,.23],[-.025,.18],[.020,.12],[.028,.065]]);
+-  box(g,.007,0,0,.056,.035,.13,grip,'trim');
+-  for(let i=0;i<5;i++)box(g,.008,.020,-.043+i*.022,.054,.006,.008,accent);
++  add(g,karambitBlade(),steel,0,0,0,'body');
++  add(g,karambitGrip(),grip,0,0,0,'trim');
+   const ring=add(g,new T.TorusGeometry(.022,.006,12,36),edge,.006,0,.09);ring.name='IndexRing';ring.rotation.x=Math.PI/2;
+-  pin(g,.007,-.043);pin(g,.007,.043);
++  pin(g,-.008,-.025);pin(g,-.008,.043);
+   const body=new T.Group();body.name='KnifeBody';for(const child of [...g.children])body.add(child);body.position.set(-.006,0,-.09);
+   const spin=new T.Group();spin.name='RingPivot';spin.add(body);g.add(spin);
+  }else{
+--- /dev/null
++++ b/tests/startup-105.test.mjs
+@@ -0,0 +1,7 @@
++import {test} from 'node:test';import assert from 'node:assert/strict';import http from 'node:http';import {loadLocalUI,probeLocalUI} from '../startup.mjs';
++test('ERR_FAILED -2 on first navigation is retried and recovers',async()=>{let n=0,ready=false;const log=[];const r=await loadLocalUI({origin:'http://127.0.0.1:1234',probe:async()=>({status:200}),load:async u=>{assert.equal(u,'http://127.0.0.1:1234/');if(++n===1)throw Object.assign(Error('ERR_FAILED (-2)'),{errno:-2});ready=true;},ready:async()=>ready,delay:async()=>{},log:(...a)=>log.push(a)});assert.equal(r.attempts,2);assert.equal(log.filter(a=>a[0]==='ui-load-failed').length,1);});
++test('superseded ERR_ABORTED only succeeds if the real UI is ready',async()=>{const r=await loadLocalUI({origin:'http://127.0.0.1:1',probe:async()=>({}),load:async()=>{throw Error('ERR_ABORTED')},ready:async()=>true,delay:async()=>{}});assert.equal(r.recovered,true);});
++test('persistent navigation failure is bounded and retains the cause',async()=>{let n=0;await assert.rejects(loadLocalUI({origin:'http://127.0.0.1:1',probe:async()=>({}),load:async()=>{n++;throw Error('ERR_FAILED (-2)')},ready:async()=>false,delay:async()=>{}}),/3 попыток.*ERR_FAILED/);assert.equal(n,3);});
++test('closed window stops startup retries',async()=>{let loaded=false;assert.deepEqual(await loadLocalUI({origin:'http://127.0.0.1:1',isClosed:()=>true,load:async()=>loaded=true}),{closed:true});assert.equal(loaded,false);});
++test('ready probe requires 200 plus the game document and rejects external URLs',async()=>{const s=http.createServer((req,res)=>{res.writeHead(200);res.end('<button id="createOpen">Play</button>')});await new Promise(r=>s.listen(0,'127.0.0.1',r));try{const r=await probeLocalUI('http://127.0.0.1:'+s.address().port);assert.equal(r.status,200);await assert.rejects(probeLocalUI('https://example.com'),/loopback/);}finally{await new Promise(r=>s.close(r));}});
++test('200 error/blank document is not a successful startup',async()=>{const s=http.createServer((req,res)=>res.end('not game'));await new Promise(r=>s.listen(0,'127.0.0.1',r));try{await assert.rejects(probeLocalUI('http://127.0.0.1:'+s.address().port),/not ready/);}finally{await new Promise(r=>s.close(r));}});
+--- /dev/null
++++ b/tools/check-package-1.0.5.cjs
+@@ -0,0 +1,8 @@
++const fs=require('fs'),assert=require('assert/strict');
++(async()=>{const asar=await import('@electron/asar'),out=[];
++const files=['startup.mjs','public/knife-geometry.mjs','public/knife-motion.mjs','public/knives.mjs','public/models.mjs','public/tactical.mjs','public/tactical-input.mjs','public/tactical-ui.mjs','tactical-channel.mjs','public/game.mjs','public/style.css','public/settings-schema.mjs','server.mjs','electron.cjs','public/index.html','public/diagnostics.mjs','RELEASE-1.0.5-RU.md','public/maps.mjs','public/shared.mjs','linux-input.mjs','preload.cjs','public/audio.mjs','public/assets/audio/manifest.json'];
++for(const id of Object.keys(JSON.parse(fs.readFileSync('public/assets/audio/manifest.json')).sounds))files.push('public/assets/audio/'+id+'.wav');
++for(const target of['linux-unpacked','win-unpacked']){const file='dist/'+target+'/resources/app.asar';for(const f of files)assert.ok(fs.readFileSync(f).equals(asar.extractFile(file,f)),target+' '+f);assert.equal(JSON.parse(asar.extractFile(file,'package.json')).version,'1.0.5');assert.ok(!asar.listPackage(file).some(s=>s.includes('/tools/qa-')));assert.ok(!asar.extractFile(file,'public/game.mjs').toString().includes('window.qa105'));out.push(target+': '+files.length+' files match source, including team channel, UI, maps, Linux input and all 47 samples; version 1.0.5; no injected QA hooks');}
++for(const f of['linux-raw-input','linux-launcher.sh'])assert.ok(fs.readFileSync('dist/linux-unpacked/resources/app.asar.unpacked/build/native/'+f).equals(fs.readFileSync('build/native/'+f)));
++assert.ok(fs.readFileSync('dist/linux-unpacked/voidline-arena').equals(fs.readFileSync('build/native/linux-launcher.sh')));out.push('Linux pre-launch wrapper and XInput2 helper match source');fs.writeFileSync('tests/package-integrity-1.0.5.txt',out.join('\n')+'\n');console.log(out.join('\n'));
++})().catch(e=>{console.error(e);process.exit(1)});
+--- /dev/null
++++ b/tools/qa-v105-native.cjs
+@@ -0,0 +1,38 @@
++const {_electron:electron}=require('playwright'),fs=require('fs'),path=require('path'),assert=require('assert/strict'),{execFileSync}=require('child_process'),{WebSocket}=require('ws');
++const ROOT=path.resolve(__dirname,'..'),env={...process.env,DISPLAY:':97',XDG_SESSION_TYPE:'wayland',WAYLAND_DISPLAY:'qa-unavailable'};
++(async()=>{
++ const app=await electron.launch({executablePath:ROOT+'/node_modules/electron/dist/electron',args:[ROOT,'--ozone-platform=x11','--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--user-data-dir=/data/voidline-qa-105-'+Date.now()],env,timeout:60000});
++ let p,ally,enemy;const errors=[],results=[];const pass=s=>{console.log('PASS',s);results.push('PASS '+s);};
++ const hook=`\nwindow.qa105={knife:(id)=>getView(id),setKnife:(id)=>{prefs.knifeModel=id;},state:()=>({me,yaw,pitch,nativeMouse,locked:hasGameControl(),url:socket?.url,hold:tacticalHold.pressed,open:tacticalHold.isOpen,selected:tacticalHold.selected,hud:tacticalHUD.diagnostics()}),aim:(y,p)=>{yaw=y;pitch=p;sendInput();}};`;
++ async function joinPeer(url,team,name){const w=new WebSocket(url);w.messages=[];w.on('message',raw=>w.messages.push(JSON.parse(raw)));await new Promise((r,j)=>{w.once('open',r);w.once('error',j);});w.send(JSON.stringify({type:'join',team,name}));for(let i=0;i<150&&!w.messages.some(m=>m.type==='welcome');i++)await new Promise(r=>setTimeout(r,20));assert.ok(w.messages.some(m=>m.type==='welcome'));return w;}
++ try{
++ p=await app.firstWindow();p.setDefaultTimeout(60000);p.on('pageerror',e=>errors.push(e.stack));await p.waitForLoadState('load');await p.waitForFunction(()=>document.getElementById('scanPeers'));await p.waitForTimeout(400);
++ await p.route('**/game.mjs',r=>r.fulfill({contentType:'text/javascript',body:fs.readFileSync(ROOT+'/public/game.mjs','utf8')+hook}));
++ await p.evaluate(async()=>{await window.voidlineSettings.invoke('save',{frameCap:60,renderScale:.5,renderResolution:'1280x720',shadows:'off',aa:'off'});});await p.reload();await p.waitForFunction(()=>window.qa105);
++ await p.evaluate(()=>{window.qaPackets=[];window.qaOutgoing=[];const Base=WebSocket;window.WebSocket=class extends Base{constructor(...a){super(...a);this.addEventListener('message',e=>{try{qaPackets.push(JSON.parse(e.data));}catch{}});}send(data){try{const m=JSON.parse(data);if(m.type==='tactical'||m.type==='input'){qaOutgoing.push(m);if(qaOutgoing.length>800)qaOutgoing.shift();}}catch{}return super.send(data);}};});
++ await p.locator('#createOpen').click();await p.locator('#botsA').selectOption('0');await p.locator('#botsB').selectOption('0');await p.locator('#createPlay').click();await p.locator('[data-team=T]').click();await p.waitForFunction(()=>qa105.state().me?.alive);
++ const url=await p.evaluate(()=>qa105.state().url);ally=await joinPeer(url,'T','ALLY');enemy=await joinPeer(url,'CT','ENEMY');
++ if(!await p.evaluate(()=>qa105.state().locked)){await p.waitForTimeout(1400);await p.locator('#resume').click();}await p.waitForFunction(()=>qa105.state().nativeMouse);await p.evaluate(()=>qa105.aim(0,0));
++ const count=()=>p.evaluate(()=>qaPackets.filter(m=>m.type==='tactical').length);
++ let before=await count();await p.keyboard.down('KeyV');await p.waitForTimeout(60);await p.keyboard.up('KeyV');await p.waitForFunction(n=>qaPackets.filter(m=>m.type==='tactical').length===n+1,before);assert.equal(await p.evaluate(()=>qaPackets.filter(m=>m.type==='tactical').at(-1).event.kind),'ping');assert.equal(await p.locator('#tacticalWheel').isVisible(),false);pass('Tap V sends exactly one real server ping and does not open the command wheel');
++ await p.waitForFunction(()=>qa105.state().hud.markers.length===1);await p.waitForTimeout(80);assert.ok(ally.messages.some(m=>m.type==='tactical'));assert.equal(enemy.messages.some(m=>m.type==='tactical'),false);pass('Ally receives real ping; enemy receives neither marker nor radio event');
++ await p.waitForTimeout(950);before=await count();await p.mouse.click(640,400,{button:'middle'});await p.waitForFunction(n=>qaPackets.filter(m=>m.type==='tactical').length===n+1,before);assert.equal(await p.evaluate(()=>qa105.state().hud.markers.length),1);pass('Middle mouse places a ping without firing and replaces the previous own marker');
++ await p.waitForTimeout(950);await p.keyboard.down('KeyV');await p.waitForFunction(()=>qa105.state().open);const yawBefore=await p.evaluate(()=>qa105.state().yaw);execFileSync('xdotool',['mousemove_relative','--','165','-80'],{env});await p.waitForFunction(()=>qa105.state().selected===1);assert.equal(await p.evaluate(()=>qa105.state().yaw),yawBefore);assert.equal(await p.evaluate(()=>qa105.state().nativeMouse),true);await p.keyboard.press('KeyW');await p.mouse.click(640,400,{button:'left'});const input=await p.evaluate(()=>qaOutgoing.filter(m=>m.type==='input').at(-1));assert.equal(input.forward,0);assert.equal(input.fire,false);await p.screenshot({path:ROOT+'/previews/1.0.5-command-wheel.png'});before=await count();await p.keyboard.up('KeyV');await p.waitForFunction(n=>qaPackets.filter(m=>m.type==='tactical').length===n+1,before);assert.equal(await p.evaluate(()=>qaPackets.filter(m=>m.type==='tactical').at(-1).event.command),'go_a');pass('Held V opens six phrases; native relative mouse selects A without camera motion, movement or firing');
++ const yawAfter=await p.evaluate(()=>qa105.state().yaw);execFileSync('xdotool',['mousemove_relative','--','80','0'],{env});await p.waitForFunction(y=>qa105.state().yaw!==y,yawAfter);pass('Releasing V commits selected command and immediately restores normal unlimited mouse aiming');
++ await p.waitForTimeout(950);await p.keyboard.down('KeyV');await p.waitForFunction(()=>qa105.state().open);before=await count();await p.keyboard.up('KeyV');await p.waitForTimeout(150);assert.equal(await count(),before);pass('Release in the dead zone cancels without a ping or command');
++ const ids=['go_b','go_a','follow','mid','quiet','curse'];for(let i=0;i<6;i++){await p.waitForTimeout(950);await p.keyboard.down('KeyV');await p.waitForFunction(()=>qa105.state().open);await p.keyboard.press('Digit'+(i+1));before=await count();await p.keyboard.up('KeyV');await p.waitForFunction(n=>qaPackets.filter(m=>m.type==='tactical').length===n+1,before);assert.equal(await p.evaluate(()=>qaPackets.filter(m=>m.type==='tactical').at(-1).event.command),ids[i]);}pass('All six real quick commands select by 1–6 and send on V release, including the exact requested phrase');assert.equal(enemy.messages.some(m=>m.type==='tactical'),false);
++ await p.keyboard.press('Digit3');await p.waitForFunction(()=>qa105.state().me?.weapon==='butterfly');await p.waitForTimeout(900);
++ for(const id of ['butterfly','karambit']){
++  await p.evaluate(id=>qa105.setKnife(id),id);await p.keyboard.press('Digit2');await p.keyboard.press('Digit3');await p.waitForFunction(id=>qa105.state().me.weapon===id,id);await p.waitForTimeout(900);
++  await p.keyboard.press('KeyF');await p.waitForFunction(id=>qa105.knife(id).userData.animations.actions.inspect.isRunning(),id);await p.waitForFunction(id=>qa105.knife(id).userData.weapon.getObjectByName(id==='butterfly'?'SwingPivot':'RingPivot').rotation.y<-.1,id);
++  const pose=await p.evaluate(id=>{const v=qa105.knife(id),w=v.userData.weapon;return {attached:w.parent.name==='R_Hand',rot:w.getObjectByName(id==='butterfly'?'SwingPivot':'RingPivot').rotation.y};},id);assert.equal(pose.attached,true);assert.ok(pose.rot<0);
++  await p.mouse.down({button:'left'});await p.waitForFunction(id=>qa105.knife(id).userData.animations.actions.fire.isRunning(),id);await p.mouse.up({button:'left'});await p.waitForTimeout(650);
++  await p.mouse.down({button:'right'});await p.waitForFunction(id=>qa105.knife(id).userData.animations.actions.heavy.isRunning(),id);await p.mouse.up({button:'right'});await p.waitForTimeout(1000);
++  pass(id+': actual Digit3, F inspect, primary and secondary attacks animate a wrist-attached knife without errors');
++ }
++ await p.keyboard.down('KeyV');await p.waitForFunction(()=>qa105.state().open);before=await count();await p.keyboard.press('Escape');await p.keyboard.up('KeyV');await p.waitForTimeout(250);assert.equal(await count(),before);assert.equal(await p.locator('#tacticalWheel').isVisible(),false);pass('Esc cancels held radio without accidental ping and releases native capture');
++ await p.locator('#chatToggle').evaluate(b=>b.click());before=await count();await p.locator('#matchChatText').fill('V — обычный текст');await p.keyboard.press('KeyV');await p.waitForTimeout(320);assert.equal(await count(),before);assert.equal(await p.locator('#tacticalWheel').isVisible(),false);pass('Typing V in chat cannot place a marker or open quick commands');
++ await p.waitForTimeout(8300);assert.equal(await p.evaluate(()=>qa105.state().hud.markers.length),0);pass('World/radar markers expire and are removed instead of accumulating');
++ assert.deepEqual(errors,[]);assert.equal(await p.locator('#fatal').isVisible(),false);pass('No page errors or fatal overlay in Linux Electron');fs.writeFileSync(ROOT+'/tests/native-1.0.5.txt',results.join('\n')+'\n');
++ }catch(e){if(p){await p.screenshot({path:'/data/qa105-failure.png'});fs.writeFileSync('/data/qa105-failure.json',JSON.stringify(await p.evaluate(()=>({state:window.qa105?.state(),packets:window.qaPackets?.filter(m=>m.type!=='state').slice(-12)})),null,2));}throw e;}finally{ally?.terminate();enemy?.terminate();await app.close();}process.exit(0);
++})().catch(e=>{console.error(e);process.exit(1)});
+--- /dev/null
++++ b/tools/qa-v105-package.cjs
+@@ -0,0 +1,23 @@
++const {_electron:electron}=require('playwright'),path=require('path'),fs=require('fs'),assert=require('assert/strict'),{execFileSync}=require('child_process');
++const ROOT=path.resolve(__dirname,'..'),env={...process.env,DISPLAY:':97',XDG_SESSION_TYPE:'wayland',WAYLAND_DISPLAY:'qa-no-wayland'};
++(async()=>{const app=await electron.launch({executablePath:ROOT+'/dist/linux-unpacked/voidline-arena',args:['--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=<-loopback>','--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader','--user-data-dir=/data/voidline-packaged-qa-105-'+Date.now()],env,timeout:60000});const results=[],errors=[];let p;
++ try{
++ p=await app.firstWindow();p.setDefaultTimeout(60000);p.on('pageerror',e=>errors.push(e.stack));await p.waitForLoadState('load');await p.waitForFunction(()=>document.getElementById('scanPeers'));
++ const info=await app.evaluate(({app})=>({version:app.getVersion(),packaged:app.isPackaged,ozone:app.commandLine.getSwitchValue('ozone-platform')}));assert.deepEqual(info,{version:'1.0.5',packaged:true,ozone:'x11'});assert.equal(await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].webContents.session.resolveProxy('http://127.0.0.1/')),'DIRECT');results.push('Packaged Linux launcher starts with a deliberately broken proxy, isolates DIRECT and selects X11 before startup with both DISPLAY and WAYLAND_DISPLAY');
++ await p.evaluate(async()=>{await window.voidlineSettings.invoke('save',{frameCap:60,renderScale:.4,renderResolution:'1280x720',shadows:'off',aa:'off'});});await p.reload();await p.waitForLoadState('load');await p.waitForFunction(()=>document.getElementById('scanPeers'));
++ await p.evaluate(()=>{window.qaRadio=[];const WS=WebSocket;window.WebSocket=class extends WS{constructor(...a){super(...a);this.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.type==='tactical')window.qaRadio.push(m);if(m.type==='welcome')window.qaId=m.id;if(m.type==='state')window.qaState=m;});}};});
++ await p.locator('#createOpen').click();await p.locator('#botsA').selectOption('0');await p.locator('#botsB').selectOption('0');await p.locator('#createPlay').click();await p.locator('[data-team=T]').click();await p.waitForFunction(()=>window.qaState?.players.some(p=>p.id===window.qaId));
++ if(!await p.evaluate(()=>!!document.pointerLockElement)){await p.waitForTimeout(1400);await p.locator('#resume').click();}
++ await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].focus());await p.waitForFunction(()=>document.getElementById('mouseBackend').textContent.includes('XInput2'));await p.waitForTimeout(250);results.push('Packaged ASAR starts its unpacked native XInput2 helper');
++ const readings=[];for(let i=0;i<4;i++){const before=await p.evaluate(()=>qaState.players.find(p=>p.id===qaId).yaw);execFileSync('xdotool',['mousemove_relative','--','900','0'],{env});await p.waitForFunction(before=>qaState.players.find(p=>p.id===qaId).yaw!==before,before,{timeout:12000});readings.push(await p.evaluate(()=>qaState.players.find(p=>p.id===qaId).yaw));}
++ results.push('Packaged native deltas reach the authoritative server across four beyond-screen motions');
++ await p.keyboard.down('KeyV');await p.waitForTimeout(60);await p.keyboard.up('KeyV');await p.waitForFunction(()=>qaRadio.some(m=>m.event.kind==='ping'));await p.waitForSelector('.tacticalMarker:not([hidden])');results.push('Packaged client: short V places a server-authenticated world/radar marker');
++ await p.waitForTimeout(1000);await p.keyboard.down('KeyV');await p.waitForSelector('#tacticalWheel:not([hidden])');const oldYaw=await p.evaluate(()=>qaState.players.find(p=>p.id===qaId).yaw);execFileSync('xdotool',['mousemove_relative','--','165','-80'],{env});await p.waitForSelector('.tacticalChoice[data-index="1"].selected');await p.waitForTimeout(120);assert.equal(await p.evaluate(()=>qaState.players.find(p=>p.id===qaId).yaw),oldYaw);await p.keyboard.press('Digit1');await p.keyboard.up('KeyV');await p.waitForFunction(()=>qaRadio.some(m=>m.event.command==='go_b'));assert.equal(await p.locator('#tacticalWheel').isVisible(),false);results.push('Packaged client: held V redirects Linux native motion to selection without aim movement; release sends Go B');
++ await p.keyboard.press('Digit3');await p.waitForFunction(()=>qaState.players.find(p=>p.id===qaId).weapon==='butterfly');await p.keyboard.press('KeyF');await p.waitForTimeout(400);
++ const models=await p.evaluate(async()=>{const {buildViewModel}=await import('/models.mjs');return ['butterfly','karambit'].map(id=>{const v=buildViewModel(id),w=v.userData.weapon,a=v.userData.animations;a.play('inspect');a.mixer.update(.9);v.updateMatrixWorld(true);const pivot=w.getObjectByName(id==='butterfly'?'SwingPivot':'RingPivot');return {id,attached:w.parent.name==='R_Hand',axisY:pivot.rotation.y,clips:Object.keys(a.actions)};});});for(const m of models){assert.equal(m.attached,true);assert.ok(m.axisY<0);assert.deepEqual(m.clips,['inspect','equip','fire','heavy']);}results.push('Both articulated knives load from the actual package, grip the hand and rotate on Y pins/ring; Digit3/F do not fail');
++ const label=await p.evaluate(()=>[...document.querySelectorAll('.tacticalMarker span')].map(e=>e.textContent));assert.ok(label.every(t=>/^\d+ м[ ↑↓]*$/.test(t)));results.push('Packaged markers contain distance only, without name/command cards');
++ await p.keyboard.press('Escape');await p.waitForFunction(()=>!document.pointerLockElement);assert.deepEqual(errors,[]);assert.equal(await p.locator('#fatal').isVisible(),false);results.push('Esc releases capture; no page errors in packaged client');
++ const packaged=await p.evaluate(async()=>{const {MAPS}=await import('/maps.mjs');const {SOUND_IDS,createGameAudio}=await import('/audio.mjs');const audio=createGameAudio({getVolume:()=>0});audio.init();await audio.preload();const loaded=audio.stats().loaded;await audio.dispose();return {maps:Object.values(MAPS).map(m=>({id:m.id,structures:m.structures.length})),sounds:SOUND_IDS.length,loaded};});assert.equal(packaged.maps.length,8);assert.ok(packaged.maps.every(m=>m.structures===2));assert.equal(packaged.sounds,47);assert.equal(packaged.loaded,47);results.push('Packaged client serves all eight new multilevel maps and decodes all 47 bundled sound samples');
++ fs.writeFileSync(ROOT+'/tests/packaged-linux-1.0.5.txt',results.map(s=>s+' PASS').join('\n')+'\n');console.log(results.join('\n'));
++ }catch(e){if(p){await p.screenshot({path:'/data/package105-failure.png'});console.error(await p.locator('#mouseBackend').textContent());}throw e;}finally{await app.close();}process.exit(0);
++})().catch(e=>{console.error(e);process.exit(1)});
+--- /dev/null
++++ b/tools/qa-v105-startup.cjs
+@@ -0,0 +1,10 @@
++const {_electron:electron}=require('playwright'),assert=require('assert/strict'),path=require('path'),fs=require('fs');
++const ROOT=path.resolve(__dirname,'..');
++(async()=>{const app=await electron.launch({executablePath:ROOT+'/node_modules/electron/dist/electron',args:[ROOT,'--no-sandbox','--ozone-platform=x11','--enable-unsafe-swiftshader','--use-angle=swiftshader','--proxy-server=http://127.0.0.1:9','--proxy-bypass-list=<-loopback>','--user-data-dir=/data/voidline-startup-105-'+Date.now()],env:{...process.env,DISPLAY:':97'},timeout:60000});let p;const results=[];const pass=s=>{results.push('PASS '+s);console.log('PASS '+s);};try{p=await app.firstWindow();p.setDefaultTimeout(60000);await p.waitForFunction(()=>document.getElementById('createOpen'));const origin=await p.evaluate(()=>location.origin);const proxy=await app.evaluate(async({BrowserWindow})=>BrowserWindow.getAllWindows()[0].webContents.session.resolveProxy(BrowserWindow.getAllWindows()[0].webContents.getURL()));assert.equal(proxy,'DIRECT');pass('Actual Electron ignores an intentionally broken Chromium/system proxy for the isolated local game session');
++let before='';for(let i=0;i<120;i++){before=await app.evaluate(({app})=>process.getBuiltinModule('fs').readFileSync(process.getBuiltinModule('path').join(app.getPath('userData'),'diagnostics.log'),'utf8'));if(before.includes('ui-loaded')||before.includes('ui-recovered'))break;await p.waitForTimeout(100);}assert.ok(before.includes('ui-loaded')||before.includes('ui-recovered'));assert.ok(before.includes('ui-ready'));pass('Initial launch probes the actual HTTP game document and logs successful navigation');
++await p.evaluate(async()=>{await window.voidlineSettings.invoke('save',{frameCap:30,renderScale:.4,renderResolution:'1280x720',shadows:'off',aa:'off'});});
++await app.evaluate(async({BrowserWindow})=>BrowserWindow.getAllWindows()[0].loadURL('about:blank'));
++let aborted=0;await p.route(origin+'/',async route=>{if(aborted++===0)await route.abort('failed');else await route.continue();});
++const result=await app.evaluate(async({BrowserWindow},{ROOT,origin})=>{const win=BrowserWindow.getAllWindows()[0],req=process.getBuiltinModule('module').createRequire(ROOT+'/electron.cjs'),{loadLocalUI}=req(ROOT+'/startup.mjs');const logs=[];const info=await loadLocalUI({origin,load:u=>win.loadURL(u),ready:async()=>{try{return await win.webContents.executeJavaScript('!!document.getElementById("createOpen")')}catch{return false}},log:(...a)=>logs.push(a)});return {info,logs};},{ROOT,origin}).catch(e=>{throw e});
++assert.equal(result.info.attempts,2);assert.ok(result.logs.some(([kind,s])=>kind==='ui-load-failed'&&s.includes('ERR_FAILED')&&s.includes('-2')));await p.waitForFunction(()=>document.getElementById('createOpen'));pass('Real Electron ERR_FAILED (-2) is reproduced by aborting the first main-document request; second attempt restores the UI');
++const saved=await p.evaluate(()=>window.voidlineSettings.invoke('load'));assert.equal(saved.result.shadows,'off');pass('Recovery preserves saved settings instead of resetting the profile');fs.writeFileSync(ROOT+'/tests/startup-native-1.0.5.txt',results.join('\n')+'\n');}finally{await app.close();}process.exit(0);})().catch(e=>{console.error(e);process.exit(1)});
+--- /dev/null
++++ b/tools/qa-v105-visual.cjs
+@@ -0,0 +1,18 @@
++const {chromium}=require('playwright'),assert=require('assert/strict'),fs=require('fs'),path=require('path');const ROOT=path.resolve(__dirname,'..');
++(async()=>{const {startServer}=await import('../server.mjs'),server=await startServer({port:3195,host:'127.0.0.1'});const browser=await chromium.launch({executablePath:'/usr/local/bin/chromium',headless:true,args:['--no-sandbox','--enable-unsafe-swiftshader','--use-angle=swiftshader']});const results=[];const pass=s=>{results.push('PASS '+s);console.log('PASS '+s);};try{const p=await browser.newPage({viewport:{width:1280,height:800}}),errors=[];p.on('pageerror',e=>errors.push(e.stack));await p.route('**/game.mjs',r=>r.fulfill({body:'',contentType:'text/javascript'}));await p.goto('http://127.0.0.1:3195');
++await p.evaluate(async()=>{
++ const T=await import('/vendor/three.module.js'),{buildViewModel}=await import('/models.mjs'),{createMapWorld}=await import('/map-world.mjs'),{getMap}=await import('/maps.mjs'),{createTacticalHUD}=await import('/tactical-ui.mjs');
++ const renderer=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(1);renderer.autoClear=false;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;
++ const world=new T.Scene();world.background=new T.Color('#b5c8cd');world.add(createMapWorld(getMap('terminal')).root);world.add(new T.HemisphereLight('#ffffff','#77746d',2.2));const sun=new T.DirectionalLight('#fff4e2',2);sun.position.set(-20,40,20);world.add(sun);const cam=new T.PerspectiveCamera(75,innerWidth/innerHeight,.1,400);cam.position.set(0,1.65,32);cam.lookAt(0,1.65,0);
++ const scene=new T.Scene();scene.add(new T.HemisphereLight('#def6ff','#4b4140',3));const key=new T.DirectionalLight('#fff1db',3);key.position.set(-2,4,3);scene.add(key);const vc=new T.PerspectiveCamera(65,innerWidth/innerHeight,.01,10);document.body.replaceChildren(renderer.domElement);const views={};for(const id of ['butterfly','karambit','m9']){views[id]=buildViewModel(id);scene.add(views[id]);}
++ const hud=createTacticalHUD();let now=Date.now();const packet={team:0,markers:[{id:'one',team:0,pos:{x:-7,y:1.1,z:0},name:'THIS NAME MUST NEVER BE IN WORLD LABEL',text:'A VERY LONG COMMAND MUST NOT APPEAR',command:'go_a',until:now+800000},{id:'two',team:0,pos:{x:9,y:4,z:-7},name:'OTHER',text:'Follow me',command:'follow',until:now+800000}]};hud.receive(packet,'me');
++ window.qa105={T,views,hud,draw(id,action,time){for(const[k,v]of Object.entries(views)){v.visible=k===id;for(const a of Object.values(v.userData.animations.actions))a.stop();}const v=views[id];v.userData.animations.play(action==='idle'?'inspect':action);if(action==='idle'){for(const a of Object.values(v.userData.animations.actions))a.stop();}else v.userData.animations.mixer.update(time);renderer.clear();renderer.render(world,cam);renderer.clearDepth();renderer.render(scene,vc);hud.update(pos=>{const a=new T.Vector3(pos.x,pos.y,pos.z).project(cam);return {x:(a.x+1)/2*innerWidth,y:(1-a.y)/2*innerHeight,z:a.z};},cam.position,true);return v;},resize(w,h){renderer.setSize(w,h);cam.aspect=vc.aspect=w/h;cam.updateProjectionMatrix();vc.updateProjectionMatrix();}};
++ await new Promise(r=>setTimeout(r,650));
++});
++const checks=await p.evaluate(()=>{const {T,views}=qa105,checks=[];const assert=(v,msg)=>{if(!v)throw Error(msg);};const vec=o=>o.getWorldPosition(new T.Vector3());for(const id of ['butterfly','karambit']){const v=views[id],w=v.userData.weapon,a=v.userData.animations,hand=v.userData.hands.getObjectByName('R_Hand');assert(w.parent===hand,'not attached '+id);for(const action of ['inspect','equip','fire','heavy']){a.play(action);let prior=null,maxStep=0;for(let i=0;i<=180;i++){a.mixer.update(a.actions[action].getClip().duration/180);v.updateMatrixWorld(true);const q=w.getWorldQuaternion(new T.Quaternion());if(prior)maxStep=Math.max(maxStep,q.angleTo(prior));prior=q;assert(Number.isFinite(vec(w).length()),'non-finite transform');if(id==='butterfly'){assert(new T.Vector3().setFromEuler(w.getObjectByName('SafeHandle').rotation).length()<1e-10,'held handle moves');}else{const pivot=w.getObjectByName('RingPivot');const offset=vec(pivot).distanceTo(vec(w));assert(offset<1e-8,'ring centre orbits instead of spinning');}}assert(maxStep<.25,'weapon jump '+maxStep);const motion=v.getObjectByName('KnifeMotion');assert(motion.position.length()<1e-7,'nonzero endpoint');assert(Math.abs(hand.rotation.x)+Math.abs(hand.rotation.z)<1e-7,'hand endpoint');}for(let i=0;i<120;i++){a.play('inspect');a.mixer.update(.5);a.play('fire');a.mixer.update(.12);a.play('equip');a.mixer.update(1);}assert(v.getObjectByName('KnifeMotion').position.length()<1e-7,'interrupt drift');checks.push(id+': attached grip, fixed pin/ring, four clips, 120 interruption cycles without drift');}return checks;});checks.forEach(pass);
++for(const[id,action,time,label]of [['butterfly','idle',0,'idle'],['butterfly','inspect',.9,'fold'],['butterfly','inspect',1.17,'closed'],['butterfly','inspect',1.9,'catch'],['karambit','idle',0,'idle'],['karambit','inspect',.88,'spin'],['karambit','inspect',1.4,'catch'],['karambit','fire',.2,'slash']]){await p.evaluate(([i,a,t])=>{qa105.draw(i,a,t);return null;},[id,action,time]);await p.screenshot({path:ROOT+`/previews/1.0.5-${id}-${label}.png`});}
++const compact=await p.evaluate(()=>[...document.querySelectorAll('.tacticalMarker')].map(e=>({text:e.textContent,w:e.getBoundingClientRect().width,h:e.getBoundingClientRect().height,visible:!e.hidden})));assert.equal(compact.length,2);for(const e of compact){assert.ok(e.w<65&&e.h<50);assert.ok(!/NAME|COMMAND|OTHER|Follow/.test(e.text));}pass('World markers are compact symbol + distance, no sender name or command text');
++await p.evaluate(()=>{const h=qa105.hud;h.receive({team:0,markers:[],event:{id:'ping',kind:'ping',senderId:'me',name:'P',text:'Метка'}},'me');});assert.equal(await p.locator('#tacticalFeed p').count(),0);for(let i=0;i<5;i++)await p.evaluate(i=>qa105.hud.receive({team:0,markers:[],event:{id:'e'+i,kind:'command',senderId:'ally',name:'ALLY',text:'Идём Б!'}},'me'),i);assert.equal(await p.locator('#tacticalFeed p').count(),2);pass('Ordinary pings do not create feed noise; quick commands capped at two compact lines');
++await p.evaluate(()=>{qa105.draw('butterfly','idle',0);qa105.hud.show();qa105.hud.select(1,140,-80);});await p.screenshot({path:ROOT+'/previews/1.0.5-commands.png'});
++await p.setViewportSize({width:390,height:780});await p.evaluate(()=>{qa105.resize(390,780);qa105.draw('karambit','idle',0);});await p.screenshot({path:ROOT+'/previews/1.0.5-commands-mobile.png'});const overflow=await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth);assert.equal(overflow,false);pass('Command menu renders at 1280x800 and 390x780 without horizontal overflow');
++assert.deepEqual(errors,[]);pass('No page errors in model, scene, HUD and animation checks');fs.writeFileSync(ROOT+'/tests/visual-1.0.5.txt',results.join('\n')+'\n');await p.close();}finally{await browser.close();server.close();}process.exit(0);})().catch(e=>{console.error(e);process.exit(1)});

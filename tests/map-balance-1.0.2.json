@@ -1,0 +1,965 @@
+{
+  "method": "8-neighbour 1m Dijkstra plus physical stair/upper-storey portal shortcuts, swept ground collision radius .36m, arrival at site disk, uniform 5.2m/s, no combat or special-event jumps, rounded milliseconds",
+  "results": [
+    {
+      "map": "terminal",
+      "site": "A",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 21.799,
+          "seconds": 4.192
+        },
+        {
+          "slot": -3,
+          "metres": 23.627,
+          "seconds": 4.544
+        },
+        {
+          "slot": 0,
+          "metres": 26.627,
+          "seconds": 5.121
+        },
+        {
+          "slot": 3,
+          "metres": 29.627,
+          "seconds": 5.698
+        },
+        {
+          "slot": 6,
+          "metres": 32.627,
+          "seconds": 6.275
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 56.385,
+          "seconds": 10.843
+        },
+        {
+          "slot": -3,
+          "metres": 57.627,
+          "seconds": 11.082
+        },
+        {
+          "slot": 0,
+          "metres": 58.87,
+          "seconds": 11.321
+        },
+        {
+          "slot": 3,
+          "metres": 60.113,
+          "seconds": 11.56
+        },
+        {
+          "slot": 6,
+          "metres": 61.355,
+          "seconds": 11.799
+        }
+      ],
+      "minimumCTLead": 4.568
+    },
+    {
+      "map": "terminal",
+      "site": "B",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 33.87,
+          "seconds": 6.513
+        },
+        {
+          "slot": -3,
+          "metres": 30.87,
+          "seconds": 5.937
+        },
+        {
+          "slot": 0,
+          "metres": 27.87,
+          "seconds": 5.36
+        },
+        {
+          "slot": 3,
+          "metres": 26.042,
+          "seconds": 5.008
+        },
+        {
+          "slot": 6,
+          "metres": 24.799,
+          "seconds": 4.769
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 58.355,
+          "seconds": 11.222
+        },
+        {
+          "slot": -3,
+          "metres": 57.113,
+          "seconds": 10.983
+        },
+        {
+          "slot": 0,
+          "metres": 55.87,
+          "seconds": 10.744
+        },
+        {
+          "slot": 3,
+          "metres": 54.627,
+          "seconds": 10.505
+        },
+        {
+          "slot": 6,
+          "metres": 53.385,
+          "seconds": 10.266
+        }
+      ],
+      "minimumCTLead": 3.753
+    },
+    {
+      "map": "courtyard",
+      "site": "A",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 23.971,
+          "seconds": 4.61
+        },
+        {
+          "slot": -3,
+          "metres": 26.971,
+          "seconds": 5.187
+        },
+        {
+          "slot": 0,
+          "metres": 29.971,
+          "seconds": 5.764
+        },
+        {
+          "slot": 3,
+          "metres": 32.971,
+          "seconds": 6.34
+        },
+        {
+          "slot": 6,
+          "metres": 35.971,
+          "seconds": 6.917
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 60.971,
+          "seconds": 11.725
+        },
+        {
+          "slot": -3,
+          "metres": 58.698,
+          "seconds": 11.288
+        },
+        {
+          "slot": 0,
+          "metres": 59.941,
+          "seconds": 11.527
+        },
+        {
+          "slot": 3,
+          "metres": 61.184,
+          "seconds": 11.766
+        },
+        {
+          "slot": 6,
+          "metres": 62.426,
+          "seconds": 12.005
+        }
+      ],
+      "minimumCTLead": 4.371
+    },
+    {
+      "map": "courtyard",
+      "site": "B",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 36.213,
+          "seconds": 6.964
+        },
+        {
+          "slot": -3,
+          "metres": 33.213,
+          "seconds": 6.387
+        },
+        {
+          "slot": 0,
+          "metres": 30.213,
+          "seconds": 5.81
+        },
+        {
+          "slot": 3,
+          "metres": 27.213,
+          "seconds": 5.233
+        },
+        {
+          "slot": 6,
+          "metres": 24.213,
+          "seconds": 4.656
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 60.598,
+          "seconds": 11.653
+        },
+        {
+          "slot": -3,
+          "metres": 58.184,
+          "seconds": 11.189
+        },
+        {
+          "slot": 0,
+          "metres": 56.941,
+          "seconds": 10.95
+        },
+        {
+          "slot": 3,
+          "metres": 55.698,
+          "seconds": 10.711
+        },
+        {
+          "slot": 6,
+          "metres": 54.456,
+          "seconds": 10.472
+        }
+      ],
+      "minimumCTLead": 3.508
+    },
+    {
+      "map": "dockyard",
+      "site": "A",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 28.142,
+          "seconds": 5.412
+        },
+        {
+          "slot": -3,
+          "metres": 31.142,
+          "seconds": 5.989
+        },
+        {
+          "slot": 0,
+          "metres": 34.142,
+          "seconds": 6.566
+        },
+        {
+          "slot": 3,
+          "metres": 37.142,
+          "seconds": 7.143
+        },
+        {
+          "slot": 6,
+          "metres": 40.142,
+          "seconds": 7.72
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 56.527,
+          "seconds": 10.871
+        },
+        {
+          "slot": -3,
+          "metres": 57.77,
+          "seconds": 11.11
+        },
+        {
+          "slot": 0,
+          "metres": 59.012,
+          "seconds": 11.348
+        },
+        {
+          "slot": 3,
+          "metres": 60.255,
+          "seconds": 11.587
+        },
+        {
+          "slot": 6,
+          "metres": 61.497,
+          "seconds": 11.826
+        }
+      ],
+      "minimumCTLead": 3.151
+    },
+    {
+      "map": "dockyard",
+      "site": "B",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 40.385,
+          "seconds": 7.766
+        },
+        {
+          "slot": -3,
+          "metres": 37.385,
+          "seconds": 7.189
+        },
+        {
+          "slot": 0,
+          "metres": 34.385,
+          "seconds": 6.612
+        },
+        {
+          "slot": 3,
+          "metres": 31.385,
+          "seconds": 6.036
+        },
+        {
+          "slot": 6,
+          "metres": 28.385,
+          "seconds": 5.459
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 62.426,
+          "seconds": 12.005
+        },
+        {
+          "slot": -3,
+          "metres": 59.426,
+          "seconds": 11.428
+        },
+        {
+          "slot": 0,
+          "metres": 57.598,
+          "seconds": 11.077
+        },
+        {
+          "slot": 3,
+          "metres": 56.355,
+          "seconds": 10.838
+        },
+        {
+          "slot": 6,
+          "metres": 55.113,
+          "seconds": 10.599
+        }
+      ],
+      "minimumCTLead": 2.833
+    },
+    {
+      "map": "foundry",
+      "site": "A",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 24.042,
+          "seconds": 4.623
+        },
+        {
+          "slot": -3,
+          "metres": 26.456,
+          "seconds": 5.088
+        },
+        {
+          "slot": 0,
+          "metres": 29.456,
+          "seconds": 5.665
+        },
+        {
+          "slot": 3,
+          "metres": 32.456,
+          "seconds": 6.242
+        },
+        {
+          "slot": 6,
+          "metres": 35.456,
+          "seconds": 6.818
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 58.213,
+          "seconds": 11.195
+        },
+        {
+          "slot": -3,
+          "metres": 59.456,
+          "seconds": 11.434
+        },
+        {
+          "slot": 0,
+          "metres": 60.698,
+          "seconds": 11.673
+        },
+        {
+          "slot": 3,
+          "metres": 61.941,
+          "seconds": 11.912
+        },
+        {
+          "slot": 6,
+          "metres": 63.77,
+          "seconds": 12.263
+        }
+      ],
+      "minimumCTLead": 4.377
+    },
+    {
+      "map": "foundry",
+      "site": "B",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 36.698,
+          "seconds": 7.057
+        },
+        {
+          "slot": -3,
+          "metres": 33.698,
+          "seconds": 6.48
+        },
+        {
+          "slot": 0,
+          "metres": 30.698,
+          "seconds": 5.904
+        },
+        {
+          "slot": 3,
+          "metres": 28.284,
+          "seconds": 5.439
+        },
+        {
+          "slot": 6,
+          "metres": 27.042,
+          "seconds": 5.2
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 61.355,
+          "seconds": 11.799
+        },
+        {
+          "slot": -3,
+          "metres": 58.355,
+          "seconds": 11.222
+        },
+        {
+          "slot": 0,
+          "metres": 57.113,
+          "seconds": 10.983
+        },
+        {
+          "slot": 3,
+          "metres": 55.87,
+          "seconds": 10.744
+        },
+        {
+          "slot": 6,
+          "metres": 54.627,
+          "seconds": 10.505
+        }
+      ],
+      "minimumCTLead": 3.448
+    },
+    {
+      "map": "oasis",
+      "site": "A",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 28.799,
+          "seconds": 5.538
+        },
+        {
+          "slot": -3,
+          "metres": 31.799,
+          "seconds": 6.115
+        },
+        {
+          "slot": 0,
+          "metres": 34.799,
+          "seconds": 6.692
+        },
+        {
+          "slot": 3,
+          "metres": 37.799,
+          "seconds": 7.269
+        },
+        {
+          "slot": 6,
+          "metres": 40.799,
+          "seconds": 7.846
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 63.527,
+          "seconds": 12.217
+        },
+        {
+          "slot": -3,
+          "metres": 64.77,
+          "seconds": 12.456
+        },
+        {
+          "slot": 0,
+          "metres": 66.012,
+          "seconds": 12.695
+        },
+        {
+          "slot": 3,
+          "metres": 67.255,
+          "seconds": 12.934
+        },
+        {
+          "slot": 6,
+          "metres": 68.497,
+          "seconds": 13.173
+        }
+      ],
+      "minimumCTLead": 4.371
+    },
+    {
+      "map": "oasis",
+      "site": "B",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 42.042,
+          "seconds": 8.085
+        },
+        {
+          "slot": -3,
+          "metres": 39.042,
+          "seconds": 7.508
+        },
+        {
+          "slot": 0,
+          "metres": 36.042,
+          "seconds": 6.931
+        },
+        {
+          "slot": 3,
+          "metres": 33.042,
+          "seconds": 6.354
+        },
+        {
+          "slot": 6,
+          "metres": 30.042,
+          "seconds": 5.777
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 65.497,
+          "seconds": 12.596
+        },
+        {
+          "slot": -3,
+          "metres": 64.255,
+          "seconds": 12.357
+        },
+        {
+          "slot": 0,
+          "metres": 63.012,
+          "seconds": 12.118
+        },
+        {
+          "slot": 3,
+          "metres": 61.77,
+          "seconds": 11.879
+        },
+        {
+          "slot": 6,
+          "metres": 60.527,
+          "seconds": 11.64
+        }
+      ],
+      "minimumCTLead": 3.555
+    },
+    {
+      "map": "depot",
+      "site": "A",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 28.385,
+          "seconds": 5.459
+        },
+        {
+          "slot": -3,
+          "metres": 29.627,
+          "seconds": 5.698
+        },
+        {
+          "slot": 0,
+          "metres": 30.87,
+          "seconds": 5.937
+        },
+        {
+          "slot": 3,
+          "metres": 32.113,
+          "seconds": 6.176
+        },
+        {
+          "slot": 6,
+          "metres": 33.941,
+          "seconds": 6.527
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 60.971,
+          "seconds": 11.725
+        },
+        {
+          "slot": -3,
+          "metres": 62.213,
+          "seconds": 11.964
+        },
+        {
+          "slot": 0,
+          "metres": 63.456,
+          "seconds": 12.203
+        },
+        {
+          "slot": 3,
+          "metres": 64.698,
+          "seconds": 12.442
+        },
+        {
+          "slot": 6,
+          "metres": 65.941,
+          "seconds": 12.681
+        }
+      ],
+      "minimumCTLead": 5.198
+    },
+    {
+      "map": "depot",
+      "site": "B",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 37.355,
+          "seconds": 7.184
+        },
+        {
+          "slot": -3,
+          "metres": 36.113,
+          "seconds": 6.945
+        },
+        {
+          "slot": 0,
+          "metres": 34.87,
+          "seconds": 6.706
+        },
+        {
+          "slot": 3,
+          "metres": 33.627,
+          "seconds": 6.467
+        },
+        {
+          "slot": 6,
+          "metres": 32.385,
+          "seconds": 6.228
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 61.941,
+          "seconds": 11.912
+        },
+        {
+          "slot": -3,
+          "metres": 60.698,
+          "seconds": 11.673
+        },
+        {
+          "slot": 0,
+          "metres": 59.456,
+          "seconds": 11.434
+        },
+        {
+          "slot": 3,
+          "metres": 58.213,
+          "seconds": 11.195
+        },
+        {
+          "slot": 6,
+          "metres": 56.971,
+          "seconds": 10.956
+        }
+      ],
+      "minimumCTLead": 3.772
+    },
+    {
+      "map": "frost",
+      "site": "A",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 27.627,
+          "seconds": 5.313
+        },
+        {
+          "slot": -3,
+          "metres": 30.627,
+          "seconds": 5.89
+        },
+        {
+          "slot": 0,
+          "metres": 33.627,
+          "seconds": 6.467
+        },
+        {
+          "slot": 3,
+          "metres": 36.627,
+          "seconds": 7.044
+        },
+        {
+          "slot": 6,
+          "metres": 39.627,
+          "seconds": 7.621
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 60.284,
+          "seconds": 11.593
+        },
+        {
+          "slot": -3,
+          "metres": 61.527,
+          "seconds": 11.832
+        },
+        {
+          "slot": 0,
+          "metres": 62.77,
+          "seconds": 12.071
+        },
+        {
+          "slot": 3,
+          "metres": 64.012,
+          "seconds": 12.31
+        },
+        {
+          "slot": 6,
+          "metres": 65.255,
+          "seconds": 12.549
+        }
+      ],
+      "minimumCTLead": 3.972
+    },
+    {
+      "map": "frost",
+      "site": "B",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 40.87,
+          "seconds": 7.86
+        },
+        {
+          "slot": -3,
+          "metres": 37.87,
+          "seconds": 7.283
+        },
+        {
+          "slot": 0,
+          "metres": 34.87,
+          "seconds": 6.706
+        },
+        {
+          "slot": 3,
+          "metres": 31.87,
+          "seconds": 6.129
+        },
+        {
+          "slot": 6,
+          "metres": 28.87,
+          "seconds": 5.552
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 62.255,
+          "seconds": 11.972
+        },
+        {
+          "slot": -3,
+          "metres": 61.012,
+          "seconds": 11.733
+        },
+        {
+          "slot": 0,
+          "metres": 59.77,
+          "seconds": 11.494
+        },
+        {
+          "slot": 3,
+          "metres": 58.527,
+          "seconds": 11.255
+        },
+        {
+          "slot": 6,
+          "metres": 57.284,
+          "seconds": 11.016
+        }
+      ],
+      "minimumCTLead": 3.156
+    },
+    {
+      "map": "bastion",
+      "site": "A",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 27.87,
+          "seconds": 5.36
+        },
+        {
+          "slot": -3,
+          "metres": 30.284,
+          "seconds": 5.824
+        },
+        {
+          "slot": 0,
+          "metres": 33.284,
+          "seconds": 6.401
+        },
+        {
+          "slot": 3,
+          "metres": 36.284,
+          "seconds": 6.978
+        },
+        {
+          "slot": 6,
+          "metres": 39.284,
+          "seconds": 7.555
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 63.284,
+          "seconds": 12.17
+        },
+        {
+          "slot": -3,
+          "metres": 64.527,
+          "seconds": 12.409
+        },
+        {
+          "slot": 0,
+          "metres": 65.77,
+          "seconds": 12.648
+        },
+        {
+          "slot": 3,
+          "metres": 67.012,
+          "seconds": 12.887
+        },
+        {
+          "slot": 6,
+          "metres": 68.255,
+          "seconds": 13.126
+        }
+      ],
+      "minimumCTLead": 4.615
+    },
+    {
+      "map": "bastion",
+      "site": "B",
+      "speed": 5.2,
+      "CT": [
+        {
+          "slot": -6,
+          "metres": 40.527,
+          "seconds": 7.794
+        },
+        {
+          "slot": -3,
+          "metres": 37.527,
+          "seconds": 7.217
+        },
+        {
+          "slot": 0,
+          "metres": 34.527,
+          "seconds": 6.64
+        },
+        {
+          "slot": 3,
+          "metres": 32.113,
+          "seconds": 6.176
+        },
+        {
+          "slot": 6,
+          "metres": 30.698,
+          "seconds": 5.904
+        }
+      ],
+      "T": [
+        {
+          "slot": -6,
+          "metres": 65.426,
+          "seconds": 12.582
+        },
+        {
+          "slot": -3,
+          "metres": 63.598,
+          "seconds": 12.23
+        },
+        {
+          "slot": 0,
+          "metres": 62.355,
+          "seconds": 11.991
+        },
+        {
+          "slot": 3,
+          "metres": 61.113,
+          "seconds": 11.752
+        },
+        {
+          "slot": 6,
+          "metres": 59.87,
+          "seconds": 11.513
+        }
+      ],
+      "minimumCTLead": 3.719
+    }
+  ]
+}

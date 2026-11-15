@@ -1,0 +1,84 @@
+{
+  "fullClips": [
+    {
+      "id": "butterfly",
+      "variant": 0,
+      "min": 99,
+      "bad": 0,
+      "palmMin": 1.4232112244533595,
+      "palmBad": 0
+    },
+    {
+      "id": "butterfly",
+      "variant": 1,
+      "min": 99,
+      "bad": 0,
+      "palmMin": 1.4232112244533595,
+      "palmBad": 0
+    },
+    {
+      "id": "karambit",
+      "variant": 0,
+      "min": 0.03781504165925264,
+      "bad": 0,
+      "worst": {
+        "node": "KnifeBody",
+        "along": 0.06531684838354601,
+        "radial": 0.03781504165925264,
+        "point": [
+          0.2048519505720336,
+          -0.35876328843608524,
+          -0.7997154148098168
+        ],
+        "act": "heavy",
+        "time": 0.47281249999999997
+      },
+      "palmMin": 1.486772622806474,
+      "palmBad": 0
+    },
+    {
+      "id": "karambit",
+      "variant": 1,
+      "min": 0.03781504165925264,
+      "bad": 0,
+      "worst": {
+        "node": "KnifeBody",
+        "along": 0.06531684838354601,
+        "radial": 0.03781504165925264,
+        "point": [
+          0.2048519505720336,
+          -0.35876328843608524,
+          -0.7997154148098168
+        ],
+        "act": "heavy",
+        "time": 0.47281249999999997
+      },
+      "palmMin": 1.486772622806474,
+      "palmBad": 0
+    }
+  ],
+  "interruptions": [
+    {
+      "id": "butterfly",
+      "alternates": [
+        1,
+        0,
+        1,
+        0
+      ],
+      "interruptions": 120,
+      "palmMin": 1.608678409169718
+    },
+    {
+      "id": "karambit",
+      "alternates": [
+        1,
+        0,
+        1,
+        0
+      ],
+      "interruptions": 120,
+      "palmMin": 1.5646898548045625
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+
+7-Zip (z) 24.09 (x64) : Copyright (c) 1999-2024 Igor Pavlov : 2024-11-28
+ 64-bit locale=C.UTF-8 Threads:2 OPEN_MAX:1048576, ASM
+
+Scanning the drive for archives:
+1 file, 116274275 bytes (111 MiB)
+
+Testing archive: dist/VOIDLINE-1.0.4-Setup-x64.exe
+--
+Path = dist/VOIDLINE-1.0.4-Setup-x64.exe
+Type = Nsis
+Physical Size = 116274275
+Method = LZMA:23
+Solid = +
+Headers Size = 50434
+Embedded Stub Size = 408576
+SubType = NSIS-3 Unicode
+
+Everything is Ok
+
+Files: 81
+Size:       388817056
+Compressed: 116274275

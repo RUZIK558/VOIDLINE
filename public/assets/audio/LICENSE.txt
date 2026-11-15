@@ -1,0 +1,4 @@
+VOIDLINE original synthesized sound effects
+Generated with tools/generate-audio.py; no third-party samples.
+Dedicated to the public domain under CC0 1.0.
+https://creativecommons.org/publicdomain/zero/1.0/

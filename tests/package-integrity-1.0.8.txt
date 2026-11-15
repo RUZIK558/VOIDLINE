@@ -1,0 +1,3 @@
+linux-unpacked: 76 files match source, including team channel, UI, maps, Linux input and all 47 samples; version 1.0.8; no injected QA hooks
+win-unpacked: 76 files match source, including team channel, UI, maps, Linux input and all 47 samples; version 1.0.8; no injected QA hooks
+Linux pre-launch wrapper and XInput2 helper match source

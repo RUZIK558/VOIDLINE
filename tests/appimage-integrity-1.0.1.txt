@@ -1,0 +1,1 @@
+AppImage extracted payload, launcher and native input match packaged sources

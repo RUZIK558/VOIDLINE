@@ -1,0 +1,11 @@
+crosshair live DOM / slider PASS
+separate CT/T skinned material palettes PASS
+AWP muzzle sprite uses exact model transform PASS
+all ten firearm view-models and muzzle sockets PASS
+first-person ally camera / body hidden / weapon-ammo HUD PASS
+real pointer lock + spectator key cycling PASS
+real server flash replicated into full-white spectator overlay PASS
+respawn exits spectating PASS
+headless Chromium real lock: beyond-window aim PASS
+P2P discovery UI available PASS
+No page errors / no fatal overlay PASS

@@ -1,0 +1,12 @@
+wheel 120 weapon pistol
+wheel 120 weapon m9
+wheel 120 utility he
+wheel 120 utility flash
+wheel 120 utility smoke
+wheel 120 utility fire
+wheel 120 weapon ak47
+wheel -120 utility fire
+wheel -120 utility smoke
+reload/chat/unlocked guards PASS
+server events + HUD + discounted shop PASS
+mobile + narrow layout, no page errors PASS

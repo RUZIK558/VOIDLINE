@@ -1,0 +1,8 @@
+VOIDLINE 1.0.1
+180/180 Node tests pass; none skipped.
+Real Linux Electron/Xvfb test passes: shop T/CT, native XInput2, 12 relative turns, Esc/chat release, notifications.
+Packaged Linux launcher and native helper tested; relative input verified in authoritative server snapshots.
+AppImage extraction and payload comparison pass.
+Windows cross-build and installer archive integrity test pass; actual Windows execution not tested.
+CS2 maps NOT imported; eight existing maps retained pending source assets/conversion.
+Pure Wayland without DISPLAY does not use the XInput2 backend; physical devices/compositors not exhaustively tested.
